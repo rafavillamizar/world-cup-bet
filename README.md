@@ -295,3 +295,5 @@ No ejecutes `firebase deploy --only hosting`: la web vive en GitHub Pages.
 | Final | 12 | 15 |
 
 Bonus: campeon, MVP y maximo goleador suman 15 puntos cada uno. Reestructuracion resta 4, 6 u 8 puntos segun fase.
+
+<!-- Force execution 1 -->
