@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    function writeOpen() {
+      return exists(/databases/$(database)/documents/app/config)
+        && get(/databases/$(database)/documents/app/config).data.writeEnabled == true;
+    }
+
+    function writeScope() {
+      return get(/databases/$(database)/documents/app/config).data.writeScope;
+    }
+
+    function ownBetCreateAllowed(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && (
+          writeOpen()
+          || (
+            request.resource.data.uid == userId
+            && request.resource.data.status == "draft"
+            && request.resource.data.matchPredictions.size() == 0
+            && request.resource.data.advancement.size() == 0
+            && request.resource.data.awards.size() == 0
+            && request.resource.data.restructures.size() == 0
+          )
+        );
+    }
+
+    function ownBetUpdateAllowed(userId) {
+      return signedIn()
+        && request.auth.uid == userId
+        && writeOpen()
+        && (
+          resource.data.status != "submitted"
+          || writeScope() in ["round32", "round16", "quarter"]
+        );
+    }
+
+    match /app/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /teams/{teamId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /matches/{matchId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == "participant";
+      allow update: if isAdmin()
+        || (
+          signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.role == resource.data.role
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /bets/{userId} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || ownBetCreateAllowed(userId);
+      allow update: if isAdmin() || ownBetUpdateAllowed(userId);
+      allow delete: if isAdmin();
+    }
+  }
+}
