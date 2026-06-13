@@ -1,0 +1,94 @@
+export type Round =
+  | "group"
+  | "round32"
+  | "round16"
+  | "quarter"
+  | "semi"
+  | "final";
+
+export type WriteScope = "initial" | "round32" | "round16" | "quarter" | "closed";
+
+export type Team = {
+  id: string;
+  name: string;
+  shortName: string;
+  group: string;
+  flagCode: string;
+  emoji: string;
+};
+
+export type Match = {
+  id: string;
+  order: number;
+  round: Round;
+  group?: string;
+  date?: string;
+  venue?: string;
+  homeTeamId?: string;
+  awayTeamId?: string;
+  homeSlot?: string;
+  awaySlot?: string;
+  actualHomeScore?: number;
+  actualAwayScore?: number;
+  winnerTeamId?: string;
+  status: "scheduled" | "completed";
+};
+
+export type MatchPrediction = {
+  homeScore?: number;
+  awayScore?: number;
+  winnerTeamId?: string;
+  updatedAt?: string;
+};
+
+export type AwardsPrediction = {
+  championTeamId?: string;
+  mvpName?: string;
+  topScorerName?: string;
+};
+
+export type Restructure = {
+  id: string;
+  phase: Extract<Round, "round32" | "round16" | "quarter">;
+  teamOutId: string;
+  teamInId: string;
+  cost: number;
+  createdAt: string;
+};
+
+export type UserBet = {
+  uid: string;
+  displayName: string;
+  status: "draft" | "submitted";
+  matchPredictions: Record<string, MatchPrediction>;
+  advancement: Partial<Record<Round, string[]>>;
+  awards: AwardsPrediction;
+  restructures: Restructure[];
+  submittedAt?: string;
+  updatedAt?: string;
+};
+
+export type UserProfile = {
+  uid: string;
+  displayName: string;
+  email: string;
+  role: "admin" | "participant";
+};
+
+export type AppConfig = {
+  writeEnabled: boolean;
+  writeScope: WriteScope;
+  activeRound: Round;
+  lockedMessage: string;
+  actualAwards: AwardsPrediction;
+};
+
+export type ScoreBreakdown = {
+  total: number;
+  exactHits: number;
+  winnerHits: number;
+  championHit: boolean;
+  mvpHit: boolean;
+  topScorerHit: boolean;
+  restructureCost: number;
+};
