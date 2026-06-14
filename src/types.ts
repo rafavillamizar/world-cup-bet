@@ -32,6 +32,7 @@ export type Match = {
   actualAwayScore?: number;
   winnerTeamId?: string;
   status: "scheduled" | "completed";
+  predictionsLocked?: boolean;
 };
 
 export type MatchPrediction = {

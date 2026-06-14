@@ -51,15 +51,15 @@ export const teams: Team[] = [
   { id: "panama", name: "Panama", shortName: "PAN", group: "L", flagCode: "pa", emoji: "🇵🇦" }
 ];
 
-const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "actualHomeScore" | "actualAwayScore" | "winnerTeamId" | "status">>> = [
-  { group: "A", date: "2026-06-11", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "south-africa", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "mexico", status: "completed" },
-  { group: "A", date: "2026-06-11", venue: "Estadio Guadalajara", homeTeamId: "south-korea", awayTeamId: "czechia", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "south-korea", status: "completed" },
-  { group: "B", date: "2026-06-12", venue: "Toronto Stadium", homeTeamId: "canada", awayTeamId: "bosnia", actualHomeScore: 1, actualAwayScore: 1, status: "completed" },
-  { group: "D", date: "2026-06-12", venue: "Los Angeles Stadium", homeTeamId: "usa", awayTeamId: "paraguay", actualHomeScore: 4, actualAwayScore: 1, winnerTeamId: "usa", status: "completed" },
-  { group: "B", date: "2026-06-13", venue: "San Francisco Bay Area Stadium", homeTeamId: "qatar", awayTeamId: "switzerland", actualHomeScore: 1, actualAwayScore: 1, status: "completed" },
-  { group: "C", date: "2026-06-13", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "morocco", actualHomeScore: 1, actualAwayScore: 1, status: "completed" },
-  { group: "C", date: "2026-06-13", venue: "Boston Stadium", homeTeamId: "haiti", awayTeamId: "scotland", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "scotland", status: "completed" },
-  { group: "D", date: "2026-06-14", venue: "BC Place Vancouver", homeTeamId: "australia", awayTeamId: "turkiye", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "australia", status: "completed" },
+const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "actualHomeScore" | "actualAwayScore" | "winnerTeamId" | "status" | "predictionsLocked">>> = [
+  { group: "A", date: "2026-06-11", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "south-africa", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "mexico", status: "completed", predictionsLocked: true },
+  { group: "A", date: "2026-06-11", venue: "Estadio Guadalajara", homeTeamId: "south-korea", awayTeamId: "czechia", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "south-korea", status: "completed", predictionsLocked: true },
+  { group: "B", date: "2026-06-12", venue: "Toronto Stadium", homeTeamId: "canada", awayTeamId: "bosnia", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
+  { group: "D", date: "2026-06-12", venue: "Los Angeles Stadium", homeTeamId: "usa", awayTeamId: "paraguay", actualHomeScore: 4, actualAwayScore: 1, winnerTeamId: "usa", status: "completed", predictionsLocked: true },
+  { group: "B", date: "2026-06-13", venue: "San Francisco Bay Area Stadium", homeTeamId: "qatar", awayTeamId: "switzerland", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
+  { group: "C", date: "2026-06-13", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "morocco", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
+  { group: "C", date: "2026-06-13", venue: "Boston Stadium", homeTeamId: "haiti", awayTeamId: "scotland", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "scotland", status: "completed", predictionsLocked: true },
+  { group: "D", date: "2026-06-14", venue: "BC Place Vancouver", homeTeamId: "australia", awayTeamId: "turkiye", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "australia", status: "completed", predictionsLocked: true },
   { group: "E", date: "2026-06-14", venue: "Houston Stadium", homeTeamId: "germany", awayTeamId: "curacao", actualHomeScore: 7, actualAwayScore: 1, winnerTeamId: "germany", status: "completed" },
   { group: "F", date: "2026-06-14", venue: "Dallas Stadium", homeTeamId: "netherlands", awayTeamId: "japan" },
   { group: "E", date: "2026-06-14", venue: "Philadelphia Stadium", homeTeamId: "ivory-coast", awayTeamId: "ecuador" },

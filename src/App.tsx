@@ -16,7 +16,6 @@ import {
   Users
 } from "lucide-react";
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
@@ -99,8 +98,6 @@ function toNumber(value: string) {
 function LoginView() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [error, setError] = useState("");
 
   async function submit() {
@@ -109,12 +106,9 @@ function LoginView() {
       return;
     }
     try {
-      const result =
-        mode === "login"
-          ? await signInWithEmailAndPassword(firebase.auth, email, password)
-          : await createUserWithEmailAndPassword(firebase.auth, email, password);
+      const result = await signInWithEmailAndPassword(firebase.auth, email, password);
       if (firebase.db) {
-        await ensureUserDocuments(result.user, mode === "register" ? name || email.split("@")[0] : undefined);
+        await ensureUserDocuments(result.user);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se ha podido iniciar sesion.");
@@ -138,20 +132,19 @@ function LoginView() {
         )}
 
         <div className="segmented">
-          <button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>
+          <button className="active">
             Acceder
           </button>
-          <button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>
+          <button disabled title="El registro esta cerrado">
             Crear cuenta
           </button>
         </div>
 
-        {mode === "register" && (
-          <label>
-            Nombre
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Rafa" />
-          </label>
-        )}
+        <div className="notice subtle">
+          <Lock size={18} />
+          <span>El registro esta cerrado. Solo pueden acceder usuarios ya creados.</span>
+        </div>
+
         <label>
           Email
           <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@email.com" />
@@ -278,7 +271,8 @@ function MatchCard({
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
-  const disabled = !canWrite;
+  const predictionLocked = Boolean(match.predictionsLocked);
+  const disabled = !canWrite || predictionLocked;
   const homeWinnerValue = match.homeTeamId ?? "home";
   const awayWinnerValue = match.awayTeamId ?? "away";
 
@@ -286,7 +280,7 @@ function MatchCard({
     <article className="match-card">
       <header>
         <span>{match.group ? `Grupo ${match.group}` : roundLabels[match.round]}</span>
-        <strong>{match.status === "completed" ? `${result.points} pts` : match.date ?? "TBD"}</strong>
+        <strong>{predictionLocked ? "Cerrado" : match.status === "completed" ? `${result.points} pts` : match.date ?? "TBD"}</strong>
       </header>
 
       <div className="match-teams">
@@ -301,6 +295,8 @@ function MatchCard({
           onChange={(next) => onPrediction(match.id, next)}
         />
       </div>
+
+      {predictionLocked && <p className="locked-copy">Pronostico cerrado: partido previo al inicio de la porra.</p>}
 
       {match.round !== "group" && (
         <label className="winner-select">
@@ -759,6 +755,10 @@ export default function App() {
 
   async function updatePrediction(matchId: string, prediction: MatchPrediction) {
     if (!currentBet) return;
+    if (matches.find((match) => match.id === matchId)?.predictionsLocked) {
+      blocked();
+      return;
+    }
     await updateBet({ matchPredictions: { ...currentBet.matchPredictions, [matchId]: prediction } });
   }
 

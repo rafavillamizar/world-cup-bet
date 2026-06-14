@@ -148,6 +148,12 @@ label {
   padding: 12px;
 }
 
+.notice.subtle {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted);
+}
+
 .segmented,
 .round-tabs {
   display: flex;
@@ -420,6 +426,13 @@ label {
 .admin-result {
   display: grid;
   gap: 8px;
+}
+
+.locked-copy {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .admin-result {
