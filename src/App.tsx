@@ -68,6 +68,8 @@ const writeScopeLabels: Record<WriteScope, string> = {
   closed: "Cerrado"
 };
 
+const preBetGroupMatchCount = 8;
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -87,6 +89,13 @@ function emptyBet(profile: UserProfile): UserBet {
 
 function getTeam(teamId?: string) {
   return teams.find((team) => team.id === teamId);
+}
+
+function isPredictionLocked(match?: Match) {
+  return Boolean(
+    match?.predictionsLocked ||
+      (match?.round === "group" && match.order >= 1 && match.order <= preBetGroupMatchCount)
+  );
 }
 
 function toNumber(value: string) {
@@ -271,7 +280,7 @@ function MatchCard({
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
-  const predictionLocked = Boolean(match.predictionsLocked);
+  const predictionLocked = isPredictionLocked(match);
   const disabled = !canWrite || predictionLocked;
   const homeWinnerValue = match.homeTeamId ?? "home";
   const awayWinnerValue = match.awayTeamId ?? "away";
@@ -755,7 +764,7 @@ export default function App() {
 
   async function updatePrediction(matchId: string, prediction: MatchPrediction) {
     if (!currentBet) return;
-    if (matches.find((match) => match.id === matchId)?.predictionsLocked) {
+    if (isPredictionLocked(matches.find((match) => match.id === matchId))) {
       blocked();
       return;
     }
