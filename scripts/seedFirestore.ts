@@ -1,5 +1,5 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { defaultAppConfig, matches, teams } from "../src/data/worldCup2026";
@@ -42,7 +42,11 @@ for (const team of teams) {
 }
 
 for (const match of matches) {
-  batch.set(db.doc(`matches/${match.id}`), match, { merge: true });
+  const patch =
+    match.status === "completed" && match.winnerTeamId === undefined
+      ? { ...match, winnerTeamId: FieldValue.delete() }
+      : match;
+  batch.set(db.doc(`matches/${match.id}`), patch, { merge: true });
 }
 
 await batch.commit();
