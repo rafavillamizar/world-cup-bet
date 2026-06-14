@@ -24,13 +24,6 @@ function outcome(homeScore: number, awayScore: number) {
   return "draw";
 }
 
-function winnerFor(match: Match, homeScore: number, awayScore: number) {
-  if (match.round === "group") return outcome(homeScore, awayScore);
-  if (homeScore > awayScore) return match.homeTeamId ?? "home";
-  if (awayScore > homeScore) return match.awayTeamId ?? "away";
-  return match.winnerTeamId;
-}
-
 export function scoreMatch(match: Match, prediction?: MatchPrediction) {
   if (
     match.status !== "completed" ||
@@ -49,13 +42,9 @@ export function scoreMatch(match: Match, prediction?: MatchPrediction) {
     return { points: roundPoints[match.round].exact, exact: true, winner: true };
   }
 
-  const actualWinner = winnerFor(match, match.actualHomeScore, match.actualAwayScore);
-  const predictedWinner =
-    match.round === "group"
-      ? outcome(prediction!.homeScore!, prediction!.awayScore!)
-      : prediction!.winnerTeamId ?? winnerFor(match, prediction!.homeScore!, prediction!.awayScore!);
-
-  const winner = Boolean(actualWinner && actualWinner === predictedWinner);
+  const winner =
+    outcome(match.actualHomeScore, match.actualAwayScore) ===
+    outcome(prediction!.homeScore!, prediction!.awayScore!);
   return { points: winner ? roundPoints[match.round].winner : 0, exact: false, winner };
 }
 
