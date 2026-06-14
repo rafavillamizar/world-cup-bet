@@ -113,15 +113,8 @@ function LoginView() {
         mode === "login"
           ? await signInWithEmailAndPassword(firebase.auth, email, password)
           : await createUserWithEmailAndPassword(firebase.auth, email, password);
-      if (mode === "register" && firebase.db) {
-        const profile: UserProfile = {
-          uid: result.user.uid,
-          email: result.user.email ?? email,
-          displayName: name || email.split("@")[0],
-          role: "participant"
-        };
-        await setDoc(doc(firebase.db, "users", result.user.uid), profile, { merge: true });
-        await setDoc(doc(firebase.db, "bets", result.user.uid), emptyBet(profile), { merge: true });
+      if (firebase.db) {
+        await ensureUserDocuments(result.user, mode === "register" ? name || email.split("@")[0] : undefined);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se ha podido iniciar sesion.");
@@ -180,6 +173,31 @@ function LoginView() {
       </section>
     </main>
   );
+}
+
+async function ensureUserDocuments(user: User, displayName?: string) {
+  if (!firebase.db) return;
+
+  const profileRef = doc(firebase.db, "users", user.uid);
+  const betRef = doc(firebase.db, "bets", user.uid);
+  const [profileSnapshot, betSnapshot] = await Promise.all([getDoc(profileRef), getDoc(betRef)]);
+
+  const profile: UserProfile = profileSnapshot.exists()
+    ? (profileSnapshot.data() as UserProfile)
+    : {
+        uid: user.uid,
+        email: user.email ?? "",
+        displayName: displayName || user.email?.split("@")[0] || "Participante",
+        role: "participant"
+      };
+
+  if (!profileSnapshot.exists()) {
+    await setDoc(profileRef, profile);
+  }
+
+  if (!betSnapshot.exists()) {
+    await setDoc(betRef, emptyBet(profile));
+  }
 }
 
 function TeamBadge({ teamId, slot }: { teamId?: string; slot?: string }) {
@@ -651,30 +669,26 @@ export default function App() {
   const [matches, setMatches] = useState<Match[]>(firebase.enabled ? [] : demoState.matches);
   const [bets, setBets] = useState<UserBet[]>(firebase.enabled ? [] : demoState.bets);
   const [toast, setToast] = useState("");
+  const [bootstrapError, setBootstrapError] = useState("");
   const [roundFilter, setRoundFilter] = useState<Round>("group");
 
   useEffect(() => {
     if (!firebase.enabled || !firebase.auth || !firebase.db) return;
     return onAuthStateChanged(firebase.auth, async (user) => {
       setAuthUser(user);
+      setBootstrapError("");
       if (!user) {
         setProfile(null);
         return;
       }
-      const fallbackProfile: UserProfile = {
-        uid: user.uid,
-        displayName: user.email?.split("@")[0] ?? "Participante",
-        email: user.email ?? "",
-        role: "participant"
-      };
-      const profileRef = doc(firebase.db!, "users", user.uid);
-      const betRef = doc(firebase.db!, "bets", user.uid);
-      const [profileSnapshot, betSnapshot] = await Promise.all([getDoc(profileRef), getDoc(betRef)]);
-      if (!profileSnapshot.exists()) {
-        await setDoc(profileRef, fallbackProfile);
-      }
-      if (!betSnapshot.exists()) {
-        await setDoc(betRef, emptyBet(fallbackProfile));
+      try {
+        await ensureUserDocuments(user);
+      } catch (err) {
+        setBootstrapError(
+          err instanceof Error
+            ? err.message
+            : "No se ha podido crear el perfil del usuario en Firestore."
+        );
       }
     });
   }, []);
@@ -783,6 +797,27 @@ export default function App() {
   }
 
   if (!profile || !currentBet) {
+    if (bootstrapError) {
+      return (
+        <main className="login-shell">
+          <section className="login-card">
+            <div className="brand-mark">
+              <CircleAlert size={28} />
+            </div>
+            <h1>Error de Firestore</h1>
+            <p>No se ha podido crear o leer el perfil del usuario.</p>
+            <div className="notice">
+              <CircleAlert size={18} />
+              <span>{bootstrapError}</span>
+            </div>
+            <button className="secondary-btn" onClick={handleSignOut}>
+              <LogOut size={17} />
+              Salir
+            </button>
+          </section>
+        </main>
+      );
+    }
     if (!firebase.enabled) {
       return <AppShell profile={demoProfile} onEnterDemo={() => setProfile(demoProfile)} />;
     }
