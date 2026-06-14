@@ -92,10 +92,18 @@ function getTeam(teamId?: string) {
 }
 
 function isPredictionLocked(match?: Match) {
-  return Boolean(
-    match?.predictionsLocked ||
-      (match?.round === "group" && match.order >= 1 && match.order <= preBetGroupMatchCount)
-  );
+  return Boolean(getPredictionLockMessage(match));
+}
+
+function getPredictionLockMessage(match?: Match) {
+  if (!match) return "";
+  if (match.round === "group" && match.order >= 1 && match.order <= preBetGroupMatchCount) {
+    return "Pronostico cerrado: partido previo al inicio de la porra.";
+  }
+  if (match.predictionsLocked) {
+    return "Pronostico cerrado: partido jugado.";
+  }
+  return "";
 }
 
 function toNumber(value: string) {
@@ -280,7 +288,8 @@ function MatchCard({
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
-  const predictionLocked = isPredictionLocked(match);
+  const lockMessage = getPredictionLockMessage(match);
+  const predictionLocked = Boolean(lockMessage);
   const disabled = !canWrite || predictionLocked;
   const homeWinnerValue = match.homeTeamId ?? "home";
   const awayWinnerValue = match.awayTeamId ?? "away";
@@ -305,7 +314,7 @@ function MatchCard({
         />
       </div>
 
-      {predictionLocked && <p className="locked-copy">Pronostico cerrado: partido previo al inicio de la porra.</p>}
+      {lockMessage && <p className="locked-copy">{lockMessage}</p>}
 
       {match.round !== "group" && (
         <label className="winner-select">
