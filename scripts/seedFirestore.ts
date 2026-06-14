@@ -42,10 +42,14 @@ for (const team of teams) {
 }
 
 for (const match of matches) {
-  const patch =
-    match.status === "completed" && match.winnerTeamId === undefined
-      ? { ...match, winnerTeamId: FieldValue.delete() }
+  const normalizedMatch =
+    match.status === "completed" && match.predictionsLocked === undefined
+      ? { ...match, predictionsLocked: true }
       : match;
+  const patch =
+    normalizedMatch.status === "completed" && normalizedMatch.winnerTeamId === undefined
+      ? { ...normalizedMatch, winnerTeamId: FieldValue.delete() }
+      : normalizedMatch;
   batch.set(db.doc(`matches/${match.id}`), patch, { merge: true });
 }
 

@@ -336,7 +336,8 @@ function MatchCard({
               onOfficialResult(match.id, {
                 actualHomeScore: next.homeScore,
                 actualAwayScore: next.awayScore,
-                status: next.homeScore === undefined || next.awayScore === undefined ? "scheduled" : "completed"
+                status: next.homeScore === undefined || next.awayScore === undefined ? "scheduled" : "completed",
+                predictionsLocked: next.homeScore !== undefined && next.awayScore !== undefined ? true : match.predictionsLocked
               })
             }
           />
@@ -348,6 +349,14 @@ function MatchCard({
             <option value={homeWinnerValue}>{getTeam(match.homeTeamId)?.name ?? "Local"}</option>
             <option value={awayWinnerValue}>{getTeam(match.awayTeamId)?.name ?? "Visitante"}</option>
           </select>
+          <label className="inline-check">
+            <input
+              checked={Boolean(match.predictionsLocked)}
+              type="checkbox"
+              onChange={(event) => onOfficialResult(match.id, { predictionsLocked: event.target.checked })}
+            />
+            Bloquear pronosticos
+          </label>
         </details>
       )}
     </article>

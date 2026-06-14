@@ -92,11 +92,14 @@ Solo un admin puede promover usuarios a `admin`.
   actualHomeScore?: number,
   actualAwayScore?: number,
   winnerTeamId?: string,
-  status: "scheduled" | "completed"
+  status: "scheduled" | "completed",
+  predictionsLocked?: boolean
 }
 ```
 
 Los 72 partidos de fase de grupos estan presembrados. Las eliminatorias arrancan como slots `TBD` para actualizarlas cuando se confirme el cuadro.
+
+Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos de ese partido aunque el usuario siga en draft y aunque `app/config.writeEnabled` este abierto. Al introducir un resultado oficial desde el panel admin, el partido se bloquea automaticamente.
 
 ### `bets/{uid}`
 
