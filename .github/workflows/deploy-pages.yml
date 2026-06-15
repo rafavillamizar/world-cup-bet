@@ -44,7 +44,8 @@ jobs:
           VITE_APP_VERSION: ${{ github.sha }}
 
       - name: Write version file
-        run: node -e "const fs=require('fs'); fs.writeFileSync('dist/version.json', JSON.stringify({ version: process.env.GITHUB_SHA, builtAt: new Date().toISOString() }));"
+        run: |
+          node -e "const fs = require('fs'); fs.writeFileSync('dist/version.json', JSON.stringify({ version: process.env.GITHUB_SHA, builtAt: new Date().toISOString() }));"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
