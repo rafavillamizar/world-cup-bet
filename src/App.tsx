@@ -69,9 +69,53 @@ const writeScopeLabels: Record<WriteScope, string> = {
 };
 
 const preBetGroupMatchCount = 8;
+const appVersion = import.meta.env.VITE_APP_VERSION;
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function useVersionRefresh() {
+  useEffect(() => {
+    if (!appVersion) return;
+
+    let cancelled = false;
+
+    async function checkVersion() {
+      try {
+        const versionUrl = `${import.meta.env.BASE_URL}version.json?t=${Date.now()}`;
+        const response = await fetch(versionUrl, { cache: "no-store" });
+        if (!response.ok) return;
+
+        const remote = (await response.json()) as { version?: string };
+        if (cancelled || !remote.version || remote.version === appVersion) return;
+
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("appVersion") === remote.version) return;
+        url.searchParams.set("appVersion", remote.version);
+        window.location.replace(url.toString());
+      } catch {
+        // A failed version check should never interrupt the app.
+      }
+    }
+
+    checkVersion();
+    const interval = window.setInterval(checkVersion, 5 * 60 * 1000);
+    const onFocus = () => checkVersion();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") checkVersion();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
 }
 
 function emptyBet(profile: UserProfile): UserBet {
@@ -684,6 +728,8 @@ function Leaderboard({
 }
 
 export default function App() {
+  useVersionRefresh();
+
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(firebase.enabled ? null : demoProfile);
   const [config, setConfig] = useState<AppConfig>(

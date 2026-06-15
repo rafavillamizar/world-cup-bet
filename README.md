@@ -258,6 +258,8 @@ git push origin main
 
 El workflow instalara dependencias, ejecutara `npm run build` y publicara la carpeta `dist/`.
 
+El deploy genera tambien `dist/version.json` con el SHA del commit. La app consulta ese archivo al cargar, al volver a la pestana y cada cinco minutos. Si detecta una version nueva, navega a la misma URL con `?appVersion=<sha>` para evitar que el navegador siga usando un `index.html` cacheado.
+
 ### Dominio personalizado opcional
 
 Si usas dominio propio, configuralo en **Settings > Pages** y crea una variable:
