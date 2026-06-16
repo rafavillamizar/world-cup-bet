@@ -157,8 +157,8 @@ export const matches: Match[] = [
 ];
 
 export const defaultAppConfig = {
-  writeEnabled: false,
-  writeScope: "closed",
+  writeEnabled: true,
+  writeScope: "initial",
   activeRound: "group",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}

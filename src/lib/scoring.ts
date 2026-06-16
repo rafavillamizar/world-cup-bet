@@ -57,16 +57,8 @@ export function scoreBet(
   matches: Match[],
   actualAwards: { championTeamId?: string; mvpName?: string; topScorerName?: string }
 ): ScoreBreakdown {
-  let total = 0;
-  let exactHits = 0;
-  let winnerHits = 0;
-
-  for (const match of matches) {
-    const result = scoreMatch(match, bet.matchPredictions[match.id]);
-    total += result.points;
-    if (result.exact) exactHits += 1;
-    if (result.winner) winnerHits += 1;
-  }
+  const matchScore = scoreMatches(bet, matches);
+  let total = matchScore.total;
 
   const championHit = Boolean(
     actualAwards.championTeamId && bet.awards.championTeamId === actualAwards.championTeamId
@@ -85,7 +77,38 @@ export function scoreBet(
   total += topScorerHit ? 15 : 0;
   total -= restructureCost;
 
-  return { total, exactHits, winnerHits, championHit, mvpHit, topScorerHit, restructureCost };
+  return {
+    total,
+    exactHits: matchScore.exactHits,
+    winnerHits: matchScore.winnerHits,
+    championHit,
+    mvpHit,
+    topScorerHit,
+    restructureCost
+  };
+}
+
+export function scoreMatches(bet: UserBet, matches: Match[]): ScoreBreakdown {
+  let total = 0;
+  let exactHits = 0;
+  let winnerHits = 0;
+
+  for (const match of matches) {
+    const result = scoreMatch(match, bet.matchPredictions[match.id]);
+    total += result.points;
+    if (result.exact) exactHits += 1;
+    if (result.winner) winnerHits += 1;
+  }
+
+  return {
+    total,
+    exactHits,
+    winnerHits,
+    championHit: false,
+    mvpHit: false,
+    topScorerHit: false,
+    restructureCost: 0
+  };
 }
 
 export function compareScoreboards(

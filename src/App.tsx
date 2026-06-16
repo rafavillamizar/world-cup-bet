@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  BarChart3,
+  CalendarDays,
   Check,
   ChevronDown,
   CircleAlert,
@@ -34,7 +36,7 @@ import {
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
 import { demoBet, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
-import { compareScoreboards, scoreBet, scoreMatch } from "./lib/scoring";
+import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
   AppConfig,
   Match,
@@ -727,6 +729,141 @@ function Leaderboard({
   );
 }
 
+function formatMatchScore(match: Match) {
+  if (
+    match.status !== "completed" ||
+    match.actualHomeScore === undefined ||
+    match.actualAwayScore === undefined
+  ) {
+    return "Pendiente";
+  }
+  return `${match.actualHomeScore} - ${match.actualAwayScore}`;
+}
+
+function formatPrediction(prediction?: MatchPrediction) {
+  if (prediction?.homeScore === undefined || prediction.awayScore === undefined) {
+    return "Sin pronostico";
+  }
+  return `${prediction.homeScore} - ${prediction.awayScore}`;
+}
+
+function AdminSummaryPage({
+  bets,
+  matches
+}: {
+  bets: UserBet[];
+  matches: Match[];
+}) {
+  const [dateFilter, setDateFilter] = useState("");
+
+  const availableDates = useMemo(
+    () =>
+      Array.from(new Set(matches.map((match) => match.date).filter(Boolean) as string[])).sort(),
+    [matches]
+  );
+
+  const visibleMatches = useMemo(
+    () => matches.filter((match) => !dateFilter || match.date === dateFilter),
+    [dateFilter, matches]
+  );
+
+  const rows = useMemo(
+    () =>
+      bets
+        .map((bet) => ({ bet, score: scoreMatches(bet, visibleMatches) }))
+        .sort((a, b) => compareScoreboards(a, b) || a.bet.displayName.localeCompare(b.bet.displayName, "es")),
+    [bets, visibleMatches]
+  );
+
+  return (
+    <section className="admin-summary-grid">
+      <section className="bento-card summary-comparison">
+        <div className="section-title">
+          <BarChart3 size={19} />
+          <h2>Resumen admin</h2>
+        </div>
+
+        <div className="summary-filter">
+          <label>
+            Fecha
+            <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value)}>
+              <option value="">Todos los partidos</option>
+              {availableDates.map((date) => (
+                <option key={date} value={date}>
+                  {date}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="secondary-btn" onClick={() => setDateFilter("")} disabled={!dateFilter}>
+            <CalendarDays size={16} />
+            Ver todos
+          </button>
+        </div>
+
+        <div className="summary-match-list">
+          {visibleMatches.map((match) => {
+            const isPending =
+              match.status !== "completed" ||
+              match.actualHomeScore === undefined ||
+              match.actualAwayScore === undefined;
+            return (
+              <article className={isPending ? "summary-match pending" : "summary-match"} key={match.id}>
+                <header>
+                  <div>
+                    <span>{match.date ?? "Sin fecha"} · {match.group ? `Grupo ${match.group}` : roundLabels[match.round]}</span>
+                    <strong>
+                      {getTeam(match.homeTeamId)?.name ?? match.homeSlot ?? "Local"} vs{" "}
+                      {getTeam(match.awayTeamId)?.name ?? match.awaySlot ?? "Visitante"}
+                    </strong>
+                  </div>
+                  <em>{formatMatchScore(match)}</em>
+                </header>
+
+                <div className="summary-predictions">
+                  {bets.map((bet) => {
+                    const prediction = bet.matchPredictions[match.id];
+                    const score = scoreMatch(match, prediction);
+                    const statusClass = isPending
+                      ? "pending"
+                      : score.exact
+                        ? "exact"
+                        : score.winner
+                          ? "winner"
+                          : "miss";
+                    return (
+                      <div className={`summary-prediction ${statusClass}`} key={`${match.id}-${bet.uid}`}>
+                        <strong>{bet.displayName}</strong>
+                        <span>{formatPrediction(prediction)}</span>
+                        <em>{isPending ? "-" : `${score.points} pts`}</em>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="bento-card summary-leaderboard">
+        <div className="section-title">
+          <Trophy size={19} />
+          <h2>Clasificacion</h2>
+        </div>
+        <p>{dateFilter ? `Solo partidos del ${dateFilter}` : "Todos los partidos visibles"}</p>
+        {rows.map((row, index) => (
+          <div className="leader-row" key={row.bet.uid}>
+            <span>{index + 1}</span>
+            <strong>{row.bet.displayName}</strong>
+            <em>{row.score.total} pts</em>
+          </div>
+        ))}
+      </section>
+    </section>
+  );
+}
+
 export default function App() {
   useVersionRefresh();
 
@@ -740,6 +877,7 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [bootstrapError, setBootstrapError] = useState("");
   const [roundFilter, setRoundFilter] = useState<Round>("group");
+  const [adminView, setAdminView] = useState<"main" | "summary">("main");
 
   useEffect(() => {
     if (!firebase.enabled || !firebase.auth || !firebase.db) return;
@@ -946,7 +1084,23 @@ export default function App() {
         </div>
       </section>
 
-      <section className="dashboard-grid">
+      {isAdmin && (
+        <nav className="admin-view-tabs" aria-label="Vistas de administracion">
+          <button className={adminView === "main" ? "active" : ""} onClick={() => setAdminView("main")}>
+            <Settings size={16} />
+            Principal
+          </button>
+          <button className={adminView === "summary" ? "active" : ""} onClick={() => setAdminView("summary")}>
+            <BarChart3 size={16} />
+            Resumen
+          </button>
+        </nav>
+      )}
+
+      {isAdmin && adminView === "summary" ? (
+        <AdminSummaryPage bets={bets} matches={matches} />
+      ) : (
+        <section className="dashboard-grid">
         <section className="bento-card match-panel">
           <div className="section-title">
             <Trophy size={19} />
@@ -1004,7 +1158,8 @@ export default function App() {
             <span>Campeon, MVP y goleador: 15 cada uno</span>
           </div>
         </section>
-      </section>
+        </section>
+      )}
     </main>
   );
 }
