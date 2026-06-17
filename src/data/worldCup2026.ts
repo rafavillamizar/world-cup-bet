@@ -68,7 +68,7 @@ const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & P
   { group: "G", date: "2026-06-15", venue: "Seattle Stadium", homeTeamId: "belgium", awayTeamId: "egypt", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
   { group: "H", date: "2026-06-15", venue: "Miami Stadium", homeTeamId: "saudi-arabia", awayTeamId: "uruguay", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
   { group: "G", date: "2026-06-15", venue: "Los Angeles Stadium", homeTeamId: "iran", awayTeamId: "new-zealand", actualHomeScore: 2, actualAwayScore: 2, status: "completed", predictionsLocked: true },
-  { group: "I", date: "2026-06-16", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "senegal" },
+  { group: "I", date: "2026-06-16", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "senegal", actualHomeScore: 3, actualAwayScore: 1, winnerTeamId: "france", status: "completed", predictionsLocked: true },
   { group: "I", date: "2026-06-16", venue: "Boston Stadium", homeTeamId: "iraq", awayTeamId: "norway" },
   { group: "J", date: "2026-06-16", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "algeria" },
   { group: "J", date: "2026-06-17", venue: "San Francisco Bay Area Stadium", homeTeamId: "austria", awayTeamId: "jordan" },

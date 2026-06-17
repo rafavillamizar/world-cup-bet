@@ -25,6 +25,7 @@ import {
 } from "firebase/auth";
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   onSnapshot,
@@ -156,6 +157,17 @@ function toNumber(value: string) {
   if (value === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function toFirestorePatch(patch: Partial<Match>) {
+  return Object.fromEntries(
+    Object.entries(patch).map(([key, value]) => [key, value === undefined ? deleteField() : value])
+  );
+}
+
+function getWinnerTeamIdFromScore(match: Match, homeScore?: number, awayScore?: number) {
+  if (homeScore === undefined || awayScore === undefined || homeScore === awayScore) return undefined;
+  return homeScore > awayScore ? match.homeTeamId : match.awayTeamId;
 }
 
 function LoginView() {
@@ -292,6 +304,26 @@ function ScoreInputs({
   disabled: boolean;
   onChange: (prediction: MatchPrediction) => void;
 }) {
+  const [draft, setDraft] = useState<MatchPrediction>({
+    homeScore: prediction?.homeScore,
+    awayScore: prediction?.awayScore,
+    winnerTeamId: prediction?.winnerTeamId
+  });
+
+  useEffect(() => {
+    setDraft({
+      homeScore: prediction?.homeScore,
+      awayScore: prediction?.awayScore,
+      winnerTeamId: prediction?.winnerTeamId
+    });
+  }, [prediction?.awayScore, prediction?.homeScore, prediction?.winnerTeamId]);
+
+  function updateScore(patch: MatchPrediction) {
+    const next = { ...draft, ...patch, updatedAt: nowIso() };
+    setDraft(next);
+    onChange(next);
+  }
+
   return (
     <div className="score-inputs">
       <input
@@ -299,8 +331,8 @@ function ScoreInputs({
         disabled={disabled}
         min={0}
         type="number"
-        value={prediction?.homeScore ?? ""}
-        onChange={(event) => onChange({ ...prediction, homeScore: toNumber(event.target.value), updatedAt: nowIso() })}
+        value={draft.homeScore ?? ""}
+        onChange={(event) => updateScore({ homeScore: toNumber(event.target.value) })}
       />
       <span>:</span>
       <input
@@ -308,8 +340,8 @@ function ScoreInputs({
         disabled={disabled}
         min={0}
         type="number"
-        value={prediction?.awayScore ?? ""}
-        onChange={(event) => onChange({ ...prediction, awayScore: toNumber(event.target.value), updatedAt: nowIso() })}
+        value={draft.awayScore ?? ""}
+        onChange={(event) => updateScore({ awayScore: toNumber(event.target.value) })}
       />
     </div>
   );
@@ -387,14 +419,16 @@ function MatchCard({
           <ScoreInputs
             disabled={false}
             prediction={{ homeScore: match.actualHomeScore, awayScore: match.actualAwayScore }}
-            onChange={(next) =>
+            onChange={(next) => {
+              const isCompleted = next.homeScore !== undefined && next.awayScore !== undefined;
               onOfficialResult(match.id, {
                 actualHomeScore: next.homeScore,
                 actualAwayScore: next.awayScore,
-                status: next.homeScore === undefined || next.awayScore === undefined ? "scheduled" : "completed",
-                predictionsLocked: next.homeScore !== undefined && next.awayScore !== undefined ? true : match.predictionsLocked
-              })
-            }
+                winnerTeamId: isCompleted ? getWinnerTeamIdFromScore(match, next.homeScore, next.awayScore) : undefined,
+                status: isCompleted ? "completed" : "scheduled",
+                predictionsLocked: isCompleted ? true : match.predictionsLocked
+              });
+            }}
           />
           <select
             value={match.winnerTeamId ?? ""}
@@ -991,11 +1025,17 @@ export default function App() {
 
   async function updateOfficialResult(matchId: string, patch: Partial<Match>) {
     if (!isAdmin) return;
-    if (firebase.enabled && firebase.db) {
-      await updateDoc(doc(firebase.db, "matches", matchId), patch);
-    } else {
-      demoState.matches = demoState.matches.map((match) => (match.id === matchId ? { ...match, ...patch } : match));
-      setMatches([...demoState.matches]);
+    try {
+      if (firebase.enabled && firebase.db) {
+        await updateDoc(doc(firebase.db, "matches", matchId), toFirestorePatch(patch));
+      } else {
+        demoState.matches = demoState.matches.map((match) => (match.id === matchId ? { ...match, ...patch } : match));
+        setMatches([...demoState.matches]);
+      }
+    } catch (error) {
+      console.error(error);
+      setToast("No se ha podido actualizar el resultado oficial.");
+      window.setTimeout(() => setToast(""), 2800);
     }
   }
 
