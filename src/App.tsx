@@ -165,6 +165,22 @@ function toFirestorePatch(patch: Partial<Match>) {
   );
 }
 
+function removeUndefinedFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(removeUndefinedFields).filter((item) => item !== undefined);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .map(([key, item]) => [key, removeUndefinedFields(item)] as const)
+        .filter(([, item]) => item !== undefined)
+    );
+  }
+
+  return value;
+}
+
 function getWinnerTeamIdFromScore(match: Match, homeScore?: number, awayScore?: number) {
   if (homeScore === undefined || awayScore === undefined || homeScore === awayScore) return undefined;
   return homeScore > awayScore ? match.homeTeamId : match.awayTeamId;
@@ -400,7 +416,7 @@ function MatchCard({
           <select
             disabled={disabled}
             value={prediction?.winnerTeamId ?? ""}
-            onChange={(event) => onPrediction(match.id, { ...prediction, winnerTeamId: event.target.value })}
+            onChange={(event) => onPrediction(match.id, { ...prediction, winnerTeamId: event.target.value || undefined })}
           >
             <option value="">Selecciona</option>
             <option value={homeWinnerValue}>{getTeam(match.homeTeamId)?.name ?? match.homeSlot ?? "Local"}</option>
@@ -985,11 +1001,17 @@ export default function App() {
       return;
     }
     const normalized = { ...next, uid: profile.uid, displayName: profile.displayName, updatedAt: nowIso() };
-    if (firebase.enabled && firebase.db) {
-      await setDoc(doc(firebase.db, "bets", profile.uid), normalized, { merge: true });
-    } else {
-      demoState.bets = [normalized, ...demoState.bets.filter((bet) => bet.uid !== profile.uid)];
-      setBets([...demoState.bets]);
+    try {
+      if (firebase.enabled && firebase.db) {
+        await setDoc(doc(firebase.db, "bets", profile.uid), removeUndefinedFields(normalized) as UserBet);
+      } else {
+        demoState.bets = [normalized, ...demoState.bets.filter((bet) => bet.uid !== profile.uid)];
+        setBets([...demoState.bets]);
+      }
+    } catch (error) {
+      console.error(error);
+      setToast("No se ha podido guardar el pronostico.");
+      window.setTimeout(() => setToast(""), 2800);
     }
   }
 
@@ -1004,7 +1026,18 @@ export default function App() {
       blocked();
       return;
     }
-    await updateBet({ matchPredictions: { ...currentBet.matchPredictions, [matchId]: prediction } });
+    const cleanPrediction = removeUndefinedFields(prediction) as MatchPrediction;
+    const hasPredictionValue =
+      cleanPrediction.homeScore !== undefined ||
+      cleanPrediction.awayScore !== undefined ||
+      Boolean(cleanPrediction.winnerTeamId);
+    const nextPredictions = { ...currentBet.matchPredictions };
+    if (hasPredictionValue) {
+      nextPredictions[matchId] = cleanPrediction;
+    } else {
+      delete nextPredictions[matchId];
+    }
+    await updateBet({ matchPredictions: nextPredictions });
   }
 
   async function submitBet() {
