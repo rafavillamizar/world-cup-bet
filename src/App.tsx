@@ -328,15 +328,17 @@ function KnockoutPredictionView({
   const restructures = [
     {
       side: "Local",
+      slot: predictedView.homeSlot,
       realTeamId: match.homeTeamId,
       predictedTeamId: predictedView.predictedHomeTeamId
     },
     {
       side: "Visitante",
+      slot: predictedView.awaySlot,
       realTeamId: match.awayTeamId,
       predictedTeamId: predictedView.predictedAwayTeamId
     }
-  ].filter((item) => item.realTeamId && item.predictedTeamId && item.realTeamId !== item.predictedTeamId);
+  ].filter((item) => item.realTeamId && item.realTeamId !== item.predictedTeamId);
   const canRestructure = match.round === "round32" || match.round === "round16" || match.round === "quarter";
 
   return (
@@ -357,7 +359,8 @@ function KnockoutPredictionView({
           {restructures.map((item) => (
             <span key={`${match.id}-${item.side}`}>
               {canRestructure ? "Reestructura" : "Diferencia"} {item.side.toLowerCase()}:{" "}
-              {teamLabel(item.predictedTeamId)} {"->"} {teamLabel(item.realTeamId)}
+              {item.predictedTeamId ? teamLabel(item.predictedTeamId) : `${item.slot ?? "slot"} no clasificado segun tu porra`}{" "}
+              {"->"} {teamLabel(item.realTeamId)}
             </span>
           ))}
         </div>
