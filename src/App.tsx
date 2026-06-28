@@ -37,6 +37,7 @@ import {
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
 import { demoBet, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
+import { buildPredictedMatchViews, type PredictedMatchView } from "./lib/predictedBracket";
 import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
   AppConfig,
@@ -311,6 +312,60 @@ function TeamBadge({ teamId, slot }: { teamId?: string; slot?: string }) {
   );
 }
 
+function teamLabel(teamId?: string, fallback = "Por definir") {
+  return teamId ? (getTeam(teamId)?.name ?? teamId) : fallback;
+}
+
+function KnockoutPredictionView({
+  match,
+  predictedView
+}: {
+  match: Match;
+  predictedView?: PredictedMatchView;
+}) {
+  if (!predictedView) return null;
+
+  const restructures = [
+    {
+      side: "Local",
+      realTeamId: match.homeTeamId,
+      predictedTeamId: predictedView.predictedHomeTeamId
+    },
+    {
+      side: "Visitante",
+      realTeamId: match.awayTeamId,
+      predictedTeamId: predictedView.predictedAwayTeamId
+    }
+  ].filter((item) => item.realTeamId && item.predictedTeamId && item.realTeamId !== item.predictedTeamId);
+  const canRestructure = match.round === "round32" || match.round === "round16" || match.round === "quarter";
+
+  return (
+    <div className="predicted-match">
+      <span className="match-section-label">Segun tu porra</span>
+      <div className="match-teams compact">
+        <TeamBadge
+          teamId={predictedView.predictedHomeTeamId}
+          slot={predictedView.homeSlot ? `${predictedView.homeSlot} pendiente` : "Pendiente por ganador"}
+        />
+        <TeamBadge
+          teamId={predictedView.predictedAwayTeamId}
+          slot={predictedView.awaySlot ? `${predictedView.awaySlot} pendiente` : "Pendiente por ganador"}
+        />
+      </div>
+      {restructures.length > 0 && (
+        <div className="restructure-hints">
+          {restructures.map((item) => (
+            <span key={`${match.id}-${item.side}`}>
+              {canRestructure ? "Reestructura" : "Diferencia"} {item.side.toLowerCase()}:{" "}
+              {teamLabel(item.predictedTeamId)} {"->"} {teamLabel(item.realTeamId)}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ScoreInputs({
   prediction,
   disabled,
@@ -370,7 +425,8 @@ function MatchCard({
   isAdmin,
   onPrediction,
   onOfficialResult,
-  onBlocked
+  onBlocked,
+  predictedView
 }: {
   match: Match;
   bet: UserBet;
@@ -379,14 +435,19 @@ function MatchCard({
   onPrediction: (matchId: string, prediction: MatchPrediction) => void;
   onOfficialResult: (matchId: string, patch: Partial<Match>) => void;
   onBlocked: () => void;
+  predictedView?: PredictedMatchView;
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
   const lockMessage = getPredictionLockMessage(match);
   const predictionLocked = Boolean(lockMessage);
   const disabled = !canWrite || predictionLocked;
-  const homeWinnerValue = match.homeTeamId ?? "home";
-  const awayWinnerValue = match.awayTeamId ?? "away";
+  const predictedHomeTeamId = predictedView?.predictedHomeTeamId;
+  const predictedAwayTeamId = predictedView?.predictedAwayTeamId;
+  const homeWinnerTeamId = match.homeTeamId ?? predictedHomeTeamId;
+  const awayWinnerTeamId = match.awayTeamId ?? predictedAwayTeamId;
+  const homeWinnerValue = homeWinnerTeamId ?? "home";
+  const awayWinnerValue = awayWinnerTeamId ?? "away";
 
   return (
     <article className="match-card">
@@ -396,9 +457,12 @@ function MatchCard({
       </header>
 
       <div className="match-teams">
+        {match.round !== "group" && <span className="match-section-label">Partido real</span>}
         <TeamBadge teamId={match.homeTeamId} slot={match.homeSlot} />
         <TeamBadge teamId={match.awayTeamId} slot={match.awaySlot} />
       </div>
+
+      {match.round !== "group" && <KnockoutPredictionView match={match} predictedView={predictedView} />}
 
       <div className="score-shell" onClick={() => disabled && onBlocked()}>
         <ScoreInputs
@@ -419,8 +483,8 @@ function MatchCard({
             onChange={(event) => onPrediction(match.id, { ...prediction, winnerTeamId: event.target.value || undefined })}
           >
             <option value="">Selecciona</option>
-            <option value={homeWinnerValue}>{getTeam(match.homeTeamId)?.name ?? match.homeSlot ?? "Local"}</option>
-            <option value={awayWinnerValue}>{getTeam(match.awayTeamId)?.name ?? match.awaySlot ?? "Visitante"}</option>
+            <option value={homeWinnerValue}>{teamLabel(homeWinnerTeamId, match.homeSlot ?? "Local")}</option>
+            <option value={awayWinnerValue}>{teamLabel(awayWinnerTeamId, match.awaySlot ?? "Visitante")}</option>
           </select>
         </label>
       )}
@@ -987,6 +1051,10 @@ export default function App() {
         (currentBet.status !== "submitted" || config.writeScope !== "initial"))
   );
   const currentScore = currentBet ? scoreBet(currentBet, matches, config.actualAwards) : null;
+  const predictedMatchViews = useMemo(
+    () => (currentBet ? buildPredictedMatchViews(currentBet, matches, teams) : new Map<string, PredictedMatchView>()),
+    [currentBet, matches]
+  );
   const filteredMatches = matches.filter((match) => match.round === roundFilter);
 
   function blocked() {
@@ -1197,6 +1265,7 @@ export default function App() {
                 onPrediction={updatePrediction}
                 onOfficialResult={updateOfficialResult}
                 onBlocked={blocked}
+                predictedView={predictedMatchViews.get(match.id)}
               />
             ))}
           </div>
