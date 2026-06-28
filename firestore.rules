@@ -43,7 +43,13 @@ service cloud.firestore {
         && writeOpen()
         && (
           resource.data.status != "submitted"
-          || writeScope() in ["round32", "round16", "quarter"]
+          || (
+            writeScope() in ["round32", "round16", "quarter"]
+            && !(
+              resource.data.keys().hasAny(["submittedScopes"])
+              && resource.data.submittedScopes.keys().hasAny([writeScope()])
+            )
+          )
         );
     }
 

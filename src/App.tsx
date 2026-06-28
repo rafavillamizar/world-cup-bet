@@ -137,6 +137,7 @@ function emptyBet(profile: UserProfile): UserBet {
     advancement: {},
     awards: {},
     restructures: [],
+    submittedScopes: {},
     updatedAt: nowIso()
   };
 }
@@ -191,6 +192,12 @@ function removeUndefinedFields(value: unknown): unknown {
 function getWinnerTeamIdFromScore(match: Match, homeScore?: number, awayScore?: number) {
   if (homeScore === undefined || awayScore === undefined || homeScore === awayScore) return undefined;
   return homeScore > awayScore ? match.homeTeamId : match.awayTeamId;
+}
+
+function isScopeSubmitted(bet: UserBet, writeScope: WriteScope) {
+  if (writeScope === "closed") return true;
+  if (writeScope === "initial") return bet.status === "submitted" || Boolean(bet.submittedScopes?.initial);
+  return Boolean(bet.submittedScopes?.[writeScope]);
 }
 
 function LoginView() {
@@ -1138,12 +1145,13 @@ export default function App() {
   }, [bets, profile]);
 
   const isAdmin = profile?.role === "admin";
+  const currentScopeSubmitted = currentBet ? isScopeSubmitted(currentBet, config.writeScope) : false;
   const canWriteBet = Boolean(
     isAdmin ||
       (config.writeEnabled &&
         config.writeScope !== "closed" &&
         currentBet &&
-        (currentBet.status !== "submitted" || config.writeScope !== "initial"))
+        !currentScopeSubmitted)
   );
   const currentScore = currentBet ? scoreBet(currentBet, matches, config.actualAwards) : null;
   const predictedMatchViews = useMemo(
@@ -1158,23 +1166,26 @@ export default function App() {
   }
 
   async function saveBet(next: UserBet) {
-    if (!profile) return;
+    if (!profile) return false;
     if (!canWriteBet) {
       blocked();
-      return;
+      return false;
     }
     const normalized = { ...next, uid: profile.uid, displayName: profile.displayName, updatedAt: nowIso() };
     try {
       if (firebase.enabled && firebase.db) {
         await setDoc(doc(firebase.db, "bets", profile.uid), removeUndefinedFields(normalized) as UserBet);
+        setBets((current) => [normalized, ...current.filter((bet) => bet.uid !== profile.uid)]);
       } else {
         demoState.bets = [normalized, ...demoState.bets.filter((bet) => bet.uid !== profile.uid)];
         setBets([...demoState.bets]);
       }
+      return true;
     } catch (error) {
       console.error(error);
       setToast("No se ha podido guardar el pronostico.");
       window.setTimeout(() => setToast(""), 2800);
+      return false;
     }
   }
 
@@ -1229,7 +1240,20 @@ export default function App() {
 
   async function submitBet() {
     if (!currentBet) return;
-    await saveBet({ ...currentBet, status: "submitted", submittedAt: nowIso() });
+    const submittedAt = nowIso();
+    const saved = await saveBet({
+      ...currentBet,
+      status: "submitted",
+      submittedAt,
+      submittedScopes: {
+        ...currentBet.submittedScopes,
+        [config.writeScope]: submittedAt
+      }
+    });
+    if (saved) {
+      setToast("Porra enviada.");
+      window.setTimeout(() => setToast(""), 2800);
+    }
   }
 
   async function updateConfig(patch: Partial<AppConfig>) {
@@ -1310,7 +1334,7 @@ export default function App() {
           <h1>Hola {profile.displayName}, tienes {currentScore?.total ?? 0} puntos.</h1>
           <p>
             Escritura {config.writeEnabled ? "abierta" : "cerrada"} · {writeScopeLabels[config.writeScope]} ·{" "}
-            {currentBet.status === "submitted" ? "enviado" : "borrador"}
+            {currentScopeSubmitted ? "enviado" : "borrador"}
           </p>
         </div>
         <div className="hero-actions">

@@ -69,6 +69,7 @@ export type UserBet = {
   awards: AwardsPrediction;
   restructures: Restructure[];
   submittedAt?: string;
+  submittedScopes?: Partial<Record<WriteScope, string>>;
   updatedAt?: string;
 };
 
