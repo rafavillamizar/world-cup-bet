@@ -38,7 +38,12 @@ import {
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
 import { demoBet, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
-import { buildPredictedMatchViews, type PredictedMatchView } from "./lib/predictedBracket";
+import {
+  buildPredictedMatchViews,
+  getPlayableMatchTeams,
+  type PlayableMatchTeams,
+  type PredictedMatchView
+} from "./lib/predictedBracket";
 import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
   AppConfig,
@@ -324,37 +329,13 @@ function getRestructureCost(round: Round) {
   return null;
 }
 
-function compactTeamIds(teamIds: Array<string | undefined>) {
-  return teamIds.filter((teamId): teamId is string => Boolean(teamId));
-}
-
-function hasRoundRestructure(match: Match, bet: UserBet) {
+function hasMatchSideRestructure(match: Match, bet: UserBet, side: "home" | "away") {
   return bet.restructures.some(
     (item) =>
       item.matchId === match.id &&
       item.phase === match.round &&
-      (item.teamInId === match.homeTeamId || item.teamInId === match.awayTeamId)
+      item.side === side
   );
-}
-
-function canPredictKnockoutMatch(match: Match, bet: UserBet, predictedView?: PredictedMatchView) {
-  if (match.round === "group") return true;
-
-  const realTeams = compactTeamIds([match.homeTeamId, match.awayTeamId]);
-  if (realTeams.length === 0) return true;
-
-  const predictedTeams = compactTeamIds([
-    predictedView?.predictedHomeTeamId,
-    predictedView?.predictedAwayTeamId
-  ]);
-  const hasRealTeamInPredictedMatch = realTeams.some((teamId) => predictedTeams.includes(teamId));
-
-  return hasRealTeamInPredictedMatch || hasRoundRestructure(match, bet);
-}
-
-function predictionEligibilityMessage(match: Match, bet: UserBet, predictedView?: PredictedMatchView) {
-  if (canPredictKnockoutMatch(match, bet, predictedView)) return "";
-  return "Pronostico bloqueado: reestructura este partido antes de introducir un marcador.";
 }
 
 function KnockoutPredictionView({
@@ -362,6 +343,7 @@ function KnockoutPredictionView({
   bet,
   canWrite,
   predictedView,
+  playableMatch,
   onRestructure,
   onBlocked
 }: {
@@ -369,6 +351,7 @@ function KnockoutPredictionView({
   bet: UserBet;
   canWrite: boolean;
   predictedView?: PredictedMatchView;
+  playableMatch: PlayableMatchTeams;
   onRestructure: (item: Restructure) => void;
   onBlocked: (message?: string) => void;
 }) {
@@ -377,15 +360,17 @@ function KnockoutPredictionView({
   const restructures = [
     {
       side: "Local",
+      sideKey: "home" as const,
       slot: predictedView.homeSlot,
       realTeamId: match.homeTeamId,
-      predictedTeamId: predictedView.predictedHomeTeamId
+      predictedTeamId: playableMatch.homeTeamId
     },
     {
       side: "Visitante",
+      sideKey: "away" as const,
       slot: predictedView.awaySlot,
       realTeamId: match.awayTeamId,
-      predictedTeamId: predictedView.predictedAwayTeamId
+      predictedTeamId: playableMatch.awayTeamId
     }
   ].filter((item) => item.realTeamId && item.realTeamId !== item.predictedTeamId);
   const restructureCost = getRestructureCost(match.round);
@@ -397,13 +382,13 @@ function KnockoutPredictionView({
       return;
     }
     if (!canRestructure || !restructureCost || !item.realTeamId) return;
-    if (hasRoundRestructure(match, bet)) return;
+    if (hasMatchSideRestructure(match, bet, item.sideKey)) return;
 
     onRestructure({
       id: crypto.randomUUID(),
       phase: match.round as Restructure["phase"],
       matchId: match.id,
-      side: item.side === "Local" ? "home" : "away",
+      side: item.sideKey,
       sourceSlot: item.slot,
       teamOutId: item.predictedTeamId ?? item.slot ?? "slot-no-clasificado",
       teamInId: item.realTeamId,
@@ -417,11 +402,11 @@ function KnockoutPredictionView({
       <span className="match-section-label">Segun tu porra</span>
       <div className="match-teams compact">
         <TeamBadge
-          teamId={predictedView.predictedHomeTeamId}
+          teamId={playableMatch.homeTeamId}
           slot={predictedView.homeSlot ? `${predictedView.homeSlot} pendiente` : "Pendiente por ganador"}
         />
         <TeamBadge
-          teamId={predictedView.predictedAwayTeamId}
+          teamId={playableMatch.awayTeamId}
           slot={predictedView.awaySlot ? `${predictedView.awaySlot} pendiente` : "Pendiente por ganador"}
         />
       </div>
@@ -449,7 +434,7 @@ function KnockoutPredictionView({
                   <strong>{teamLabel(item.realTeamId)}</strong>
                 </div>
               </div>
-              {canRestructure && !hasRoundRestructure(match, bet) && (
+              {canRestructure && !hasMatchSideRestructure(match, bet, item.sideKey) && (
                 <button className="mini-action" onClick={() => applyRestructure(item)}>
                   Aplicar reestructuracion
                 </button>
@@ -538,13 +523,12 @@ function MatchCard({
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
   const lockMessage = getPredictionLockMessage(match);
-  const eligibilityMessage = predictionEligibilityMessage(match, bet, predictedView);
+  const playableMatch = getPlayableMatchTeams(match, bet, predictedView);
+  const eligibilityMessage = playableMatch.message ?? "";
   const predictionLocked = Boolean(lockMessage);
   const disabled = !canWrite || predictionLocked || Boolean(eligibilityMessage);
-  const predictedHomeTeamId = predictedView?.predictedHomeTeamId;
-  const predictedAwayTeamId = predictedView?.predictedAwayTeamId;
-  const homeWinnerTeamId = match.homeTeamId ?? predictedHomeTeamId;
-  const awayWinnerTeamId = match.awayTeamId ?? predictedAwayTeamId;
+  const homeWinnerTeamId = match.round === "group" ? match.homeTeamId : playableMatch.homeTeamId;
+  const awayWinnerTeamId = match.round === "group" ? match.awayTeamId : playableMatch.awayTeamId;
   const homeWinnerValue = homeWinnerTeamId ?? "home";
   const awayWinnerValue = awayWinnerTeamId ?? "away";
 
@@ -567,6 +551,7 @@ function MatchCard({
           bet={bet}
           canWrite={canWrite}
           predictedView={predictedView}
+          playableMatch={playableMatch}
           onRestructure={onRestructure}
           onBlocked={onBlocked}
         />
@@ -1206,7 +1191,7 @@ export default function App() {
       blocked();
       return;
     }
-    const eligibilityMessage = predictionEligibilityMessage(match, currentBet, predictedMatchViews.get(matchId));
+    const eligibilityMessage = getPlayableMatchTeams(match, currentBet, predictedMatchViews.get(matchId)).message;
     if (eligibilityMessage) {
       setToast(eligibilityMessage);
       window.setTimeout(() => setToast(""), 2800);
@@ -1233,7 +1218,10 @@ export default function App() {
       return;
     }
     const alreadyApplied = currentBet.restructures.some(
-      (restructure) => restructure.matchId === item.matchId && restructure.phase === item.phase
+      (restructure) =>
+        restructure.matchId === item.matchId &&
+        restructure.phase === item.phase &&
+        restructure.side === item.side
     );
     if (alreadyApplied) return;
     await updateBet({ restructures: [...currentBet.restructures, item] });

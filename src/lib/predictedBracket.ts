@@ -22,6 +22,15 @@ export type PredictedMatchView = {
   awaySlot?: string;
   predictedHomeTeamId?: string;
   predictedAwayTeamId?: string;
+  playableHomeTeamId?: string;
+  playableAwayTeamId?: string;
+};
+
+export type PlayableMatchTeams = {
+  homeTeamId?: string;
+  awayTeamId?: string;
+  canPredict: boolean;
+  message?: string;
 };
 
 const knockoutRounds: Round[] = ["round32", "round16", "quarter", "semi", "final"];
@@ -166,6 +175,47 @@ function resolveWinner(
   return prediction!.homeScore! > prediction!.awayScore! ? homeTeamId : awayTeamId;
 }
 
+function compactTeamIds(teamIds: Array<string | undefined>) {
+  return teamIds.filter((teamId): teamId is string => Boolean(teamId));
+}
+
+export function getPlayableMatchTeams(
+  match: Match,
+  bet: UserBet,
+  predictedView?: PredictedMatchView
+): PlayableMatchTeams {
+  if (match.round === "group") {
+    return {
+      homeTeamId: match.homeTeamId,
+      awayTeamId: match.awayTeamId,
+      canPredict: true
+    };
+  }
+
+  let homeTeamId = predictedView?.predictedHomeTeamId;
+  let awayTeamId = predictedView?.predictedAwayTeamId;
+
+  for (const item of bet.restructures) {
+    if (item.matchId !== match.id || item.phase !== match.round) continue;
+    if (item.side === "home") homeTeamId = item.teamInId;
+    if (item.side === "away") awayTeamId = item.teamInId;
+  }
+
+  const playableTeams = compactTeamIds([homeTeamId, awayTeamId]);
+  const realTeams = compactTeamIds([match.homeTeamId, match.awayTeamId]);
+  const sharesRealTeam = realTeams.length === 0 || realTeams.some((teamId) => playableTeams.includes(teamId));
+  const canPredict = playableTeams.length === 2 && sharesRealTeam;
+
+  return {
+    homeTeamId,
+    awayTeamId,
+    canPredict,
+    message: canPredict
+      ? undefined
+      : "Pronostico bloqueado: reestructura este partido antes de introducir un marcador."
+  };
+}
+
 function sourceTeam(
   previousRoundViews: PredictedMatchView[],
   previousRoundMatches: Match[],
@@ -180,8 +230,8 @@ function sourceTeam(
 
   return resolveWinner(
     bet.matchPredictions[sourceMatch.id],
-    sourceView.predictedHomeTeamId,
-    sourceView.predictedAwayTeamId
+    sourceView.playableHomeTeamId,
+    sourceView.playableAwayTeamId
   );
 }
 
@@ -204,22 +254,30 @@ export function buildPredictedMatchViews(bet: UserBet, matches: Match[], teams: 
       .sort((a, b) => a.order - b.order);
 
     const roundViews = roundMatches.map((match, index): PredictedMatchView => {
+      let predictedView: PredictedMatchView;
       if (round === "round32") {
         const homeSlot = match.homeTeamId ? actualSlots.teamToSlot.get(match.homeTeamId) : undefined;
         const awaySlot = match.awayTeamId ? actualSlots.teamToSlot.get(match.awayTeamId) : undefined;
-        return {
+        predictedView = {
           matchId: match.id,
           homeSlot,
           awaySlot,
           predictedHomeTeamId: homeSlot ? predictedSlots.slotToTeam.get(homeSlot) : undefined,
           predictedAwayTeamId: awaySlot ? predictedSlots.slotToTeam.get(awaySlot) : undefined
         };
+      } else {
+        predictedView = {
+          matchId: match.id,
+          predictedHomeTeamId: sourceTeam(previousRoundViews, previousRoundMatches, bet, index, "home"),
+          predictedAwayTeamId: sourceTeam(previousRoundViews, previousRoundMatches, bet, index, "away")
+        };
       }
 
+      const playable = getPlayableMatchTeams(match, bet, predictedView);
       return {
-        matchId: match.id,
-        predictedHomeTeamId: sourceTeam(previousRoundViews, previousRoundMatches, bet, index, "home"),
-        predictedAwayTeamId: sourceTeam(previousRoundViews, previousRoundMatches, bet, index, "away")
+        ...predictedView,
+        playableHomeTeamId: playable.homeTeamId,
+        playableAwayTeamId: playable.awayTeamId
       };
     });
 
