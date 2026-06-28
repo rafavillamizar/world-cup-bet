@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  ArrowRight,
   BarChart3,
   CalendarDays,
   Check,
@@ -316,6 +317,13 @@ function teamLabel(teamId?: string, fallback = "Por definir") {
   return teamId ? (getTeam(teamId)?.name ?? teamId) : fallback;
 }
 
+function getRestructureCost(round: Round) {
+  if (round === "round32" || round === "round16" || round === "quarter") {
+    return restructureCosts[round];
+  }
+  return null;
+}
+
 function KnockoutPredictionView({
   match,
   predictedView
@@ -339,7 +347,8 @@ function KnockoutPredictionView({
       predictedTeamId: predictedView.predictedAwayTeamId
     }
   ].filter((item) => item.realTeamId && item.realTeamId !== item.predictedTeamId);
-  const canRestructure = match.round === "round32" || match.round === "round16" || match.round === "quarter";
+  const restructureCost = getRestructureCost(match.round);
+  const canRestructure = restructureCost !== null;
 
   return (
     <div className="predicted-match">
@@ -356,12 +365,29 @@ function KnockoutPredictionView({
       </div>
       {restructures.length > 0 && (
         <div className="restructure-hints">
+          <span className="restructure-title">
+            Reestructuracion sugerida
+            <strong>{canRestructure ? `-${restructureCost} pts` : "No disponible"}</strong>
+          </span>
           {restructures.map((item) => (
-            <span key={`${match.id}-${item.side}`}>
-              {canRestructure ? "Reestructura" : "Diferencia"} {item.side.toLowerCase()}:{" "}
-              {item.predictedTeamId ? teamLabel(item.predictedTeamId) : `${item.slot ?? "slot"} no clasificado segun tu porra`}{" "}
-              {"->"} {teamLabel(item.realTeamId)}
-            </span>
+            <div className="restructure-card" key={`${match.id}-${item.side}`}>
+              <span>{item.side}</span>
+              <div className="restructure-flow">
+                <div>
+                  <small>Segun tu porra</small>
+                  <strong>
+                    {item.predictedTeamId
+                      ? teamLabel(item.predictedTeamId)
+                      : `${item.slot ?? "Slot"} no clasificado`}
+                  </strong>
+                </div>
+                <ArrowRight size={17} />
+                <div>
+                  <small>Equipo real</small>
+                  <strong>{teamLabel(item.realTeamId)}</strong>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}
