@@ -324,12 +324,53 @@ function getRestructureCost(round: Round) {
   return null;
 }
 
+function compactTeamIds(teamIds: Array<string | undefined>) {
+  return teamIds.filter((teamId): teamId is string => Boolean(teamId));
+}
+
+function hasRoundRestructure(match: Match, bet: UserBet) {
+  return bet.restructures.some(
+    (item) =>
+      item.matchId === match.id &&
+      item.phase === match.round &&
+      (item.teamInId === match.homeTeamId || item.teamInId === match.awayTeamId)
+  );
+}
+
+function canPredictKnockoutMatch(match: Match, bet: UserBet, predictedView?: PredictedMatchView) {
+  if (match.round === "group") return true;
+
+  const realTeams = compactTeamIds([match.homeTeamId, match.awayTeamId]);
+  if (realTeams.length === 0) return true;
+
+  const predictedTeams = compactTeamIds([
+    predictedView?.predictedHomeTeamId,
+    predictedView?.predictedAwayTeamId
+  ]);
+  const hasRealTeamInPredictedMatch = realTeams.some((teamId) => predictedTeams.includes(teamId));
+
+  return hasRealTeamInPredictedMatch || hasRoundRestructure(match, bet);
+}
+
+function predictionEligibilityMessage(match: Match, bet: UserBet, predictedView?: PredictedMatchView) {
+  if (canPredictKnockoutMatch(match, bet, predictedView)) return "";
+  return "Pronostico bloqueado: reestructura este partido antes de introducir un marcador.";
+}
+
 function KnockoutPredictionView({
   match,
-  predictedView
+  bet,
+  canWrite,
+  predictedView,
+  onRestructure,
+  onBlocked
 }: {
   match: Match;
+  bet: UserBet;
+  canWrite: boolean;
   predictedView?: PredictedMatchView;
+  onRestructure: (item: Restructure) => void;
+  onBlocked: (message?: string) => void;
 }) {
   if (!predictedView) return null;
 
@@ -349,6 +390,27 @@ function KnockoutPredictionView({
   ].filter((item) => item.realTeamId && item.realTeamId !== item.predictedTeamId);
   const restructureCost = getRestructureCost(match.round);
   const canRestructure = restructureCost !== null;
+
+  function applyRestructure(item: (typeof restructures)[number]) {
+    if (!canWrite) {
+      onBlocked();
+      return;
+    }
+    if (!canRestructure || !restructureCost || !item.realTeamId) return;
+    if (hasRoundRestructure(match, bet)) return;
+
+    onRestructure({
+      id: crypto.randomUUID(),
+      phase: match.round as Restructure["phase"],
+      matchId: match.id,
+      side: item.side === "Local" ? "home" : "away",
+      sourceSlot: item.slot,
+      teamOutId: item.predictedTeamId ?? item.slot ?? "slot-no-clasificado",
+      teamInId: item.realTeamId,
+      cost: restructureCost,
+      createdAt: nowIso()
+    });
+  }
 
   return (
     <div className="predicted-match">
@@ -387,6 +449,11 @@ function KnockoutPredictionView({
                   <strong>{teamLabel(item.realTeamId)}</strong>
                 </div>
               </div>
+              {canRestructure && !hasRoundRestructure(match, bet) && (
+                <button className="mini-action" onClick={() => applyRestructure(item)}>
+                  Aplicar reestructuracion
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -455,7 +522,8 @@ function MatchCard({
   onPrediction,
   onOfficialResult,
   onBlocked,
-  predictedView
+  predictedView,
+  onRestructure
 }: {
   match: Match;
   bet: UserBet;
@@ -463,14 +531,16 @@ function MatchCard({
   isAdmin: boolean;
   onPrediction: (matchId: string, prediction: MatchPrediction) => void;
   onOfficialResult: (matchId: string, patch: Partial<Match>) => void;
-  onBlocked: () => void;
+  onBlocked: (message?: string) => void;
   predictedView?: PredictedMatchView;
+  onRestructure: (item: Restructure) => void;
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
   const lockMessage = getPredictionLockMessage(match);
+  const eligibilityMessage = predictionEligibilityMessage(match, bet, predictedView);
   const predictionLocked = Boolean(lockMessage);
-  const disabled = !canWrite || predictionLocked;
+  const disabled = !canWrite || predictionLocked || Boolean(eligibilityMessage);
   const predictedHomeTeamId = predictedView?.predictedHomeTeamId;
   const predictedAwayTeamId = predictedView?.predictedAwayTeamId;
   const homeWinnerTeamId = match.homeTeamId ?? predictedHomeTeamId;
@@ -491,9 +561,18 @@ function MatchCard({
         <TeamBadge teamId={match.awayTeamId} slot={match.awaySlot} />
       </div>
 
-      {match.round !== "group" && <KnockoutPredictionView match={match} predictedView={predictedView} />}
+      {match.round !== "group" && (
+        <KnockoutPredictionView
+          match={match}
+          bet={bet}
+          canWrite={canWrite}
+          predictedView={predictedView}
+          onRestructure={onRestructure}
+          onBlocked={onBlocked}
+        />
+      )}
 
-      <div className="score-shell" onClick={() => disabled && onBlocked()}>
+      <div className="score-shell" onClick={() => disabled && onBlocked(eligibilityMessage || lockMessage)}>
         <ScoreInputs
           prediction={prediction}
           disabled={disabled}
@@ -502,6 +581,7 @@ function MatchCard({
       </div>
 
       {lockMessage && <p className="locked-copy">{lockMessage}</p>}
+      {eligibilityMessage && <p className="locked-copy">{eligibilityMessage}</p>}
 
       {match.round !== "group" && (
         <label className="winner-select">
@@ -576,7 +656,7 @@ function AwardsPanel({
   isAdmin: boolean;
   onBet: (patch: Partial<UserBet>) => void;
   onConfig: (patch: Partial<AppConfig>) => void;
-  onBlocked: () => void;
+  onBlocked: (message?: string) => void;
 }) {
   return (
     <section className="bento-card awards-panel">
@@ -662,7 +742,7 @@ function AdvancementPanel({
   bet: UserBet;
   canWrite: boolean;
   onBet: (patch: Partial<UserBet>) => void;
-  onBlocked: () => void;
+  onBlocked: (message?: string) => void;
 }) {
   function toggle(round: Round, teamId: string, limit: number) {
     if (!canWrite) {
@@ -726,7 +806,7 @@ function RestructurePanel({
   config: AppConfig;
   canWrite: boolean;
   onBet: (patch: Partial<UserBet>) => void;
-  onBlocked: () => void;
+  onBlocked: (message?: string) => void;
 }) {
   const [phase, setPhase] = useState<Restructure["phase"]>("round32");
   const [teamOutId, setTeamOutId] = useState("");
@@ -790,7 +870,8 @@ function RestructurePanel({
           <div key={item.id}>
             <span>{roundLabels[item.phase]}</span>
             <strong>
-              {getTeam(item.teamOutId)?.shortName} {"->"} {getTeam(item.teamInId)?.shortName}
+              {getTeam(item.teamOutId)?.shortName ?? item.sourceSlot ?? item.teamOutId} {"->"}{" "}
+              {getTeam(item.teamInId)?.shortName ?? item.teamInId}
             </strong>
             <em>-{item.cost}</em>
           </div>
@@ -1086,8 +1167,8 @@ export default function App() {
   );
   const filteredMatches = matches.filter((match) => match.round === roundFilter);
 
-  function blocked() {
-    setToast(config.lockedMessage);
+  function blocked(message?: string) {
+    setToast(message || config.lockedMessage);
     window.setTimeout(() => setToast(""), 2800);
   }
 
@@ -1119,8 +1200,16 @@ export default function App() {
 
   async function updatePrediction(matchId: string, prediction: MatchPrediction) {
     if (!currentBet) return;
-    if (isPredictionLocked(matches.find((match) => match.id === matchId))) {
+    const match = matches.find((item) => item.id === matchId);
+    if (!match) return;
+    if (isPredictionLocked(match)) {
       blocked();
+      return;
+    }
+    const eligibilityMessage = predictionEligibilityMessage(match, currentBet, predictedMatchViews.get(matchId));
+    if (eligibilityMessage) {
+      setToast(eligibilityMessage);
+      window.setTimeout(() => setToast(""), 2800);
       return;
     }
     const cleanPrediction = removeUndefinedFields(prediction) as MatchPrediction;
@@ -1135,6 +1224,19 @@ export default function App() {
       delete nextPredictions[matchId];
     }
     await updateBet({ matchPredictions: nextPredictions });
+  }
+
+  async function addMatchRestructure(item: Restructure) {
+    if (!currentBet) return;
+    if (!canWriteBet) {
+      blocked();
+      return;
+    }
+    const alreadyApplied = currentBet.restructures.some(
+      (restructure) => restructure.matchId === item.matchId && restructure.phase === item.phase
+    );
+    if (alreadyApplied) return;
+    await updateBet({ restructures: [...currentBet.restructures, item] });
   }
 
   async function submitBet() {
@@ -1295,6 +1397,7 @@ export default function App() {
                 onOfficialResult={updateOfficialResult}
                 onBlocked={blocked}
                 predictedView={predictedMatchViews.get(match.id)}
+                onRestructure={addMatchRestructure}
               />
             ))}
           </div>

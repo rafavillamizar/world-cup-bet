@@ -53,6 +53,9 @@ export type Restructure = {
   phase: Extract<Round, "round32" | "round16" | "quarter">;
   teamOutId: string;
   teamInId: string;
+  matchId?: string;
+  side?: "home" | "away";
+  sourceSlot?: string;
   cost: number;
   createdAt: string;
 };
