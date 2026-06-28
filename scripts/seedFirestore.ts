@@ -46,10 +46,16 @@ for (const match of matches) {
     match.status === "completed" && match.predictionsLocked === undefined
       ? { ...match, predictionsLocked: true }
       : match;
-  const patch =
-    normalizedMatch.status === "completed" && normalizedMatch.winnerTeamId === undefined
-      ? { ...normalizedMatch, winnerTeamId: FieldValue.delete() }
-      : normalizedMatch;
+  const patch: Record<string, unknown> = { ...normalizedMatch };
+  if (normalizedMatch.status === "completed" && normalizedMatch.winnerTeamId === undefined) {
+    patch.winnerTeamId = FieldValue.delete();
+  }
+  if (normalizedMatch.homeTeamId && normalizedMatch.homeSlot === undefined) {
+    patch.homeSlot = FieldValue.delete();
+  }
+  if (normalizedMatch.awayTeamId && normalizedMatch.awaySlot === undefined) {
+    patch.awaySlot = FieldValue.delete();
+  }
   batch.set(db.doc(`matches/${match.id}`), patch, { merge: true });
 }
 

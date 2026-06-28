@@ -126,15 +126,39 @@ const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & P
   { group: "K", date: "2026-06-27", venue: "Atlanta Stadium", homeTeamId: "dr-congo", awayTeamId: "uzbekistan", actualHomeScore: 3, actualAwayScore: 1, winnerTeamId: "dr-congo", status: "completed", predictionsLocked: true }
 ];
 
-const knockoutLabels: Record<Exclude<Round, "group">, string[]> = {
-  round32: Array.from({ length: 16 }, (_, index) => `Dieciseisavos ${index + 1}`),
+const round32MatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "status" | "predictionsLocked">>> = [
+  { date: "2026-06-28", venue: "Los Angeles Stadium", homeTeamId: "south-africa", awayTeamId: "canada" },
+  { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan" },
+  { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay" },
+  { date: "2026-06-29", venue: "Estadio Monterrey", homeTeamId: "netherlands", awayTeamId: "morocco" },
+  { date: "2026-06-30", venue: "Dallas Stadium", homeTeamId: "ivory-coast", awayTeamId: "norway" },
+  { date: "2026-06-30", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "sweden" },
+  { date: "2026-06-30", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "ecuador" },
+  { date: "2026-07-01", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "dr-congo" },
+  { date: "2026-07-01", venue: "Seattle Stadium", homeTeamId: "belgium", awayTeamId: "senegal" },
+  { date: "2026-07-01", venue: "San Francisco Bay Area Stadium", homeTeamId: "usa", awayTeamId: "bosnia" },
+  { date: "2026-07-02", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "austria" },
+  { date: "2026-07-02", venue: "Toronto Stadium", homeTeamId: "portugal", awayTeamId: "croatia" },
+  { date: "2026-07-02", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "algeria" },
+  { date: "2026-07-03", venue: "Dallas Stadium", homeTeamId: "australia", awayTeamId: "egypt" },
+  { date: "2026-07-03", venue: "Miami Stadium", homeTeamId: "argentina", awayTeamId: "cape-verde" },
+  { date: "2026-07-03", venue: "Kansas City Stadium", homeTeamId: "colombia", awayTeamId: "ghana" }
+];
+
+const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
   round16: Array.from({ length: 8 }, (_, index) => `Octavos ${index + 1}`),
   quarter: Array.from({ length: 4 }, (_, index) => `Cuartos ${index + 1}`),
   semi: Array.from({ length: 2 }, (_, index) => `Semifinal ${index + 1}`),
   final: ["Final"]
 };
 
-const knockoutRoundOrder: Array<Exclude<Round, "group">> = ["round32", "round16", "quarter", "semi", "final"];
+const knockoutRoundOrder: Array<Exclude<Round, "group" | "round32">> = ["round16", "quarter", "semi", "final"];
+const knockoutRoundOrderOffsets: Record<Exclude<Round, "group" | "round32">, number> = {
+  round16: 120,
+  quarter: 140,
+  semi: 160,
+  final: 180
+};
 
 export const matches: Match[] = [
   ...groupMatchRows.map((match, index) => ({
@@ -144,10 +168,17 @@ export const matches: Match[] = [
     round: "group" as const,
     status: match.status ?? "scheduled"
   })),
+  ...round32MatchRows.map((match, index) => ({
+    ...match,
+    id: `round32-${String(index + 1).padStart(2, "0")}`,
+    order: 100 + index,
+    round: "round32" as const,
+    status: match.status ?? "scheduled"
+  })),
   ...knockoutRoundOrder.flatMap((round, roundIndex) =>
     knockoutLabels[round].map((label, index) => ({
       id: `${round}-${String(index + 1).padStart(2, "0")}`,
-      order: 100 + roundIndex * 20 + index,
+      order: knockoutRoundOrderOffsets[round] + index,
       round,
       homeSlot: label,
       awaySlot: "Rival por definir",
@@ -158,8 +189,8 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
-  writeScope: "initial",
-  activeRound: "group",
+  writeScope: "round32",
+  activeRound: "round32",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}
 } as const;
