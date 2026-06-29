@@ -14,8 +14,7 @@ export const demoBet: UserBet = {
   status: "draft",
   matchPredictions: {},
   advancement: {},
-  awards: {},
-  restructures: []
+  awards: {}
 };
 
 export const demoState: {

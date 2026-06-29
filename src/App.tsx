@@ -121,7 +121,6 @@ function emptyBet(profile: UserProfile): UserBet {
     matchPredictions: {},
     advancement: {},
     awards: {},
-    restructures: [],
     submittedScopes: {},
     updatedAt: nowIso()
   };

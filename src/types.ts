@@ -55,7 +55,6 @@ export type UserBet = {
   matchPredictions: Record<string, MatchPrediction>;
   advancement: Partial<Record<Round, string[]>>;
   awards: AwardsPrediction;
-  restructures: Array<Record<string, unknown>>;
   submittedAt?: string;
   submittedScopes?: Partial<Record<WriteScope, string>>;
   updatedAt?: string;

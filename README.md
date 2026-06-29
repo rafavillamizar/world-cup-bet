@@ -1,6 +1,6 @@
 # World Cup Bet
 
-Web para gestionar una porra del Mundial 2026 con login email/password, predicciones, reestructuracion, bloqueo de escritura por Firestore y puntuacion en tiempo real.
+Web para gestionar una porra del Mundial 2026 con login email/password, predicciones, bloqueo de escritura por Firestore y puntuacion en tiempo real.
 
 ## Stack
 
@@ -45,7 +45,7 @@ Configuracion global leida en tiempo real por todos los clientes.
 
 Si `writeEnabled` es `false`, las reglas de Firestore bloquean escritura en `bets/{uid}` para participantes. La UI muestra el mensaje exacto de `lockedMessage`.
 
-En cliente, una porra con `status: "submitted"` queda bloqueada durante `writeScope: "initial"`. Vuelve a permitir cambios solo si el admin abre una ventana de reestructuracion (`round32`, `round16` o `quarter`).
+En cliente, una porra enviada queda bloqueada para la ventana activa de `writeScope`. El admin puede abrir nuevas ventanas de pronostico (`round32`, `round16` o `quarter`) cuando corresponda.
 
 ### `users/{uid}`
 
@@ -128,16 +128,6 @@ Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos
     mvpName?: string,
     topScorerName?: string
   },
-  restructures: [
-    {
-      id: string,
-      phase: "round32" | "round16" | "quarter",
-      teamOutId: string,
-      teamInId: string,
-      cost: number,
-      createdAt: string
-    }
-  ],
   submittedAt?: string,
   updatedAt?: string
 }
@@ -285,7 +275,7 @@ No ejecutes `firebase deploy --only hosting`: la web vive en GitHub Pages.
 
 - Escritura cerrada: `app/config.writeEnabled = false`
 - Mensaje mostrado: `app/config.lockedMessage`
-- Reestructuracion abierta: `writeEnabled = true` y `writeScope = "round32" | "round16" | "quarter"`
+- Ventana de eliminatorias abierta: `writeEnabled = true` y `writeScope = "round32" | "round16" | "quarter"`
 - Semifinales y final: usar `writeEnabled = false` para dejar el cuadro bloqueado definitivamente.
 
 ## Reglas de puntuacion implementadas
@@ -299,6 +289,6 @@ No ejecutes `firebase deploy --only hosting`: la web vive en GitHub Pages.
 | Semifinales | 10 | 12 |
 | Final | 12 | 15 |
 
-Bonus: campeon, MVP y maximo goleador suman 15 puntos cada uno. Reestructuracion resta 4, 6 u 8 puntos segun fase.
+Bonus: campeon, MVP y maximo goleador suman 15 puntos cada uno.
 
 ssh-add ~/.ssh/id_ed25519_personal
