@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
-  ArrowRight,
   BarChart3,
   CalendarDays,
   Check,
@@ -13,7 +12,6 @@ import {
   Save,
   Settings,
   Shield,
-  Sparkles,
   Trophy,
   Unlock,
   Users
@@ -38,18 +36,11 @@ import {
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
 import { demoBet, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
-import {
-  buildPredictedMatchViews,
-  getPlayableMatchTeams,
-  type PlayableMatchTeams,
-  type PredictedMatchView
-} from "./lib/predictedBracket";
 import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
   AppConfig,
   Match,
   MatchPrediction,
-  Restructure,
   Round,
   UserBet,
   UserProfile,
@@ -64,17 +55,11 @@ const selectableRounds: Array<{ round: Round; limit: number }> = [
   { round: "final", limit: 2 }
 ];
 
-const restructureCosts: Record<Restructure["phase"], number> = {
-  round32: 4,
-  round16: 6,
-  quarter: 8
-};
-
 const writeScopeLabels: Record<WriteScope, string> = {
   initial: "Predicciones iniciales",
-  round32: "Reestructuracion dieciseisavos",
-  round16: "Reestructuracion octavos",
-  quarter: "Reestructuracion cuartos",
+  round32: "Pronosticos dieciseisavos",
+  round16: "Pronosticos octavos",
+  quarter: "Pronosticos cuartos",
   closed: "Cerrado"
 };
 
@@ -227,7 +212,7 @@ function LoginView() {
           <Trophy size={28} />
         </div>
         <h1>Porra Mundial 2026</h1>
-        <p>Predicciones, reestructuraciones y puntuacion en tiempo real.</p>
+        <p>Predicciones y puntuacion en tiempo real.</p>
 
         {!firebase.enabled && (
           <div className="notice">
@@ -329,129 +314,11 @@ function teamLabel(teamId?: string, fallback = "Por definir") {
   return teamId ? (getTeam(teamId)?.name ?? teamId) : fallback;
 }
 
-function getRestructureCost(round: Round) {
-  if (round === "round32" || round === "round16" || round === "quarter") {
-    return restructureCosts[round];
+function getMatchAvailabilityMessage(match: Match) {
+  if (match.round !== "group" && (!match.homeTeamId || !match.awayTeamId)) {
+    return "Pronostico bloqueado: partido real pendiente de definicion.";
   }
-  return null;
-}
-
-function hasMatchSideRestructure(match: Match, bet: UserBet, side: "home" | "away") {
-  return bet.restructures.some(
-    (item) =>
-      item.matchId === match.id &&
-      item.phase === match.round &&
-      item.side === side
-  );
-}
-
-function KnockoutPredictionView({
-  match,
-  bet,
-  canWrite,
-  predictedView,
-  playableMatch,
-  onRestructure,
-  onBlocked
-}: {
-  match: Match;
-  bet: UserBet;
-  canWrite: boolean;
-  predictedView?: PredictedMatchView;
-  playableMatch: PlayableMatchTeams;
-  onRestructure: (item: Restructure) => void;
-  onBlocked: (message?: string) => void;
-}) {
-  if (!predictedView) return null;
-
-  const restructures = [
-    {
-      side: "Local",
-      sideKey: "home" as const,
-      slot: predictedView.homeSlot,
-      realTeamId: match.homeTeamId,
-      predictedTeamId: playableMatch.homeTeamId
-    },
-    {
-      side: "Visitante",
-      sideKey: "away" as const,
-      slot: predictedView.awaySlot,
-      realTeamId: match.awayTeamId,
-      predictedTeamId: playableMatch.awayTeamId
-    }
-  ].filter((item) => item.realTeamId && item.realTeamId !== item.predictedTeamId);
-  const restructureCost = getRestructureCost(match.round);
-  const canRestructure = restructureCost !== null;
-
-  function applyRestructure(item: (typeof restructures)[number]) {
-    if (!canWrite) {
-      onBlocked();
-      return;
-    }
-    if (!canRestructure || !restructureCost || !item.realTeamId) return;
-    if (hasMatchSideRestructure(match, bet, item.sideKey)) return;
-
-    onRestructure({
-      id: crypto.randomUUID(),
-      phase: match.round as Restructure["phase"],
-      matchId: match.id,
-      side: item.sideKey,
-      sourceSlot: item.slot,
-      teamOutId: item.predictedTeamId ?? item.slot ?? "slot-no-clasificado",
-      teamInId: item.realTeamId,
-      cost: restructureCost,
-      createdAt: nowIso()
-    });
-  }
-
-  return (
-    <div className="predicted-match">
-      <span className="match-section-label">Segun tu porra</span>
-      <div className="match-teams compact">
-        <TeamBadge
-          teamId={playableMatch.homeTeamId}
-          slot={predictedView.homeSlot ? `${predictedView.homeSlot} pendiente` : "Pendiente por ganador"}
-        />
-        <TeamBadge
-          teamId={playableMatch.awayTeamId}
-          slot={predictedView.awaySlot ? `${predictedView.awaySlot} pendiente` : "Pendiente por ganador"}
-        />
-      </div>
-      {restructures.length > 0 && (
-        <div className="restructure-hints">
-          <span className="restructure-title">
-            Reestructuracion sugerida
-            <strong>{canRestructure ? `-${restructureCost} pts` : "No disponible"}</strong>
-          </span>
-          {restructures.map((item) => (
-            <div className="restructure-card" key={`${match.id}-${item.side}`}>
-              <span>{item.side}</span>
-              <div className="restructure-flow">
-                <div>
-                  <small>Segun tu porra</small>
-                  <strong>
-                    {item.predictedTeamId
-                      ? teamLabel(item.predictedTeamId)
-                      : `${item.slot ?? "Slot"} no clasificado`}
-                  </strong>
-                </div>
-                <ArrowRight size={17} />
-                <div>
-                  <small>Equipo real</small>
-                  <strong>{teamLabel(item.realTeamId)}</strong>
-                </div>
-              </div>
-              {canRestructure && !hasMatchSideRestructure(match, bet, item.sideKey) && (
-                <button className="mini-action" onClick={() => applyRestructure(item)}>
-                  Aplicar reestructuracion
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return "";
 }
 
 function ScoreInputs({
@@ -513,9 +380,7 @@ function MatchCard({
   isAdmin,
   onPrediction,
   onOfficialResult,
-  onBlocked,
-  predictedView,
-  onRestructure
+  onBlocked
 }: {
   match: Match;
   bet: UserBet;
@@ -524,18 +389,15 @@ function MatchCard({
   onPrediction: (matchId: string, prediction: MatchPrediction) => void;
   onOfficialResult: (matchId: string, patch: Partial<Match>) => void;
   onBlocked: (message?: string) => void;
-  predictedView?: PredictedMatchView;
-  onRestructure: (item: Restructure) => void;
 }) {
   const prediction = bet.matchPredictions[match.id];
   const result = scoreMatch(match, prediction);
   const lockMessage = getPredictionLockMessage(match);
-  const playableMatch = getPlayableMatchTeams(match, bet, predictedView);
-  const eligibilityMessage = playableMatch.message ?? "";
+  const availabilityMessage = getMatchAvailabilityMessage(match);
   const predictionLocked = Boolean(lockMessage);
-  const disabled = !canWrite || predictionLocked || Boolean(eligibilityMessage);
-  const homeWinnerTeamId = match.round === "group" ? match.homeTeamId : playableMatch.homeTeamId;
-  const awayWinnerTeamId = match.round === "group" ? match.awayTeamId : playableMatch.awayTeamId;
+  const disabled = !canWrite || predictionLocked || Boolean(availabilityMessage);
+  const homeWinnerTeamId = match.homeTeamId;
+  const awayWinnerTeamId = match.awayTeamId;
   const homeWinnerValue = homeWinnerTeamId ?? "home";
   const awayWinnerValue = awayWinnerTeamId ?? "away";
 
@@ -547,24 +409,11 @@ function MatchCard({
       </header>
 
       <div className="match-teams">
-        {match.round !== "group" && <span className="match-section-label">Partido real</span>}
         <TeamBadge teamId={match.homeTeamId} slot={match.homeSlot} />
         <TeamBadge teamId={match.awayTeamId} slot={match.awaySlot} />
       </div>
 
-      {match.round !== "group" && (
-        <KnockoutPredictionView
-          match={match}
-          bet={bet}
-          canWrite={canWrite}
-          predictedView={predictedView}
-          playableMatch={playableMatch}
-          onRestructure={onRestructure}
-          onBlocked={onBlocked}
-        />
-      )}
-
-      <div className="score-shell" onClick={() => disabled && onBlocked(eligibilityMessage || lockMessage)}>
+      <div className="score-shell" onClick={() => disabled && onBlocked(availabilityMessage || lockMessage)}>
         <ScoreInputs
           prediction={prediction}
           disabled={disabled}
@@ -573,7 +422,7 @@ function MatchCard({
       </div>
 
       {lockMessage && <p className="locked-copy">{lockMessage}</p>}
-      {eligibilityMessage && <p className="locked-copy">{eligibilityMessage}</p>}
+      {availabilityMessage && <p className="locked-copy">{availabilityMessage}</p>}
 
       {match.round !== "group" && (
         <label className="winner-select">
@@ -787,92 +636,6 @@ function AdvancementPanel({
   );
 }
 
-function RestructurePanel({
-  bet,
-  config,
-  canWrite,
-  onBet,
-  onBlocked
-}: {
-  bet: UserBet;
-  config: AppConfig;
-  canWrite: boolean;
-  onBet: (patch: Partial<UserBet>) => void;
-  onBlocked: (message?: string) => void;
-}) {
-  const [phase, setPhase] = useState<Restructure["phase"]>("round32");
-  const [teamOutId, setTeamOutId] = useState("");
-  const [teamInId, setTeamInId] = useState("");
-
-  function addRestructure() {
-    if (!canWrite) {
-      onBlocked();
-      return;
-    }
-    if (!teamOutId || !teamInId) return;
-    const item: Restructure = {
-      id: crypto.randomUUID(),
-      phase,
-      teamOutId,
-      teamInId,
-      cost: restructureCosts[phase],
-      createdAt: nowIso()
-    };
-    onBet({ restructures: [...bet.restructures, item] });
-    setTeamOutId("");
-    setTeamInId("");
-  }
-
-  return (
-    <section className="bento-card restructure-panel">
-      <div className="section-title">
-        <Sparkles size={19} />
-        <h2>Reestructuracion</h2>
-      </div>
-      <p>Disponible hasta cuartos si el administrador abre escritura. Ventana actual: {writeScopeLabels[config.writeScope]}.</p>
-      <div className="restructure-form">
-        <select value={phase} onChange={(event) => setPhase(event.target.value as Restructure["phase"])}>
-          <option value="round32">Dieciseisavos (-4)</option>
-          <option value="round16">Octavos (-6)</option>
-          <option value="quarter">Cuartos (-8)</option>
-        </select>
-        <select value={teamOutId} onChange={(event) => setTeamOutId(event.target.value)}>
-          <option value="">Sale</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-        <select value={teamInId} onChange={(event) => setTeamInId(event.target.value)}>
-          <option value="">Entra</option>
-          {teams.map((team) => (
-            <option key={team.id} value={team.id}>
-              {team.name}
-            </option>
-          ))}
-        </select>
-        <button onClick={addRestructure}>
-          <Save size={16} />
-          Aplicar
-        </button>
-      </div>
-      <div className="restructure-list">
-        {bet.restructures.map((item) => (
-          <div key={item.id}>
-            <span>{roundLabels[item.phase]}</span>
-            <strong>
-              {getTeam(item.teamOutId)?.shortName ?? item.sourceSlot ?? item.teamOutId} {"->"}{" "}
-              {getTeam(item.teamInId)?.shortName ?? item.teamInId}
-            </strong>
-            <em>-{item.cost}</em>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function AdminPanel({
   config,
   onConfig
@@ -897,9 +660,9 @@ function AdminPanel({
         Ventana
         <select value={config.writeScope} onChange={(event) => onConfig({ writeScope: event.target.value as WriteScope })}>
           <option value="initial">Predicciones iniciales</option>
-          <option value="round32">Reestructuracion dieciseisavos</option>
-          <option value="round16">Reestructuracion octavos</option>
-          <option value="quarter">Reestructuracion cuartos</option>
+          <option value="round32">Pronosticos dieciseisavos</option>
+          <option value="round16">Pronosticos octavos</option>
+          <option value="quarter">Pronosticos cuartos</option>
           <option value="closed">Cerrado</option>
         </select>
       </label>
@@ -1154,10 +917,6 @@ export default function App() {
         !currentScopeSubmitted)
   );
   const currentScore = currentBet ? scoreBet(currentBet, matches, config.actualAwards) : null;
-  const predictedMatchViews = useMemo(
-    () => (currentBet ? buildPredictedMatchViews(currentBet, matches, teams) : new Map<string, PredictedMatchView>()),
-    [currentBet, matches]
-  );
   const filteredMatches = matches.filter((match) => match.round === roundFilter);
 
   function blocked(message?: string) {
@@ -1202,9 +961,9 @@ export default function App() {
       blocked();
       return;
     }
-    const eligibilityMessage = getPlayableMatchTeams(match, currentBet, predictedMatchViews.get(matchId)).message;
-    if (eligibilityMessage) {
-      setToast(eligibilityMessage);
+    const availabilityMessage = getMatchAvailabilityMessage(match);
+    if (availabilityMessage) {
+      setToast(availabilityMessage);
       window.setTimeout(() => setToast(""), 2800);
       return;
     }
@@ -1220,22 +979,6 @@ export default function App() {
       delete nextPredictions[matchId];
     }
     await updateBet({ matchPredictions: nextPredictions });
-  }
-
-  async function addMatchRestructure(item: Restructure) {
-    if (!currentBet) return;
-    if (!canWriteBet) {
-      blocked();
-      return;
-    }
-    const alreadyApplied = currentBet.restructures.some(
-      (restructure) =>
-        restructure.matchId === item.matchId &&
-        restructure.phase === item.phase &&
-        restructure.side === item.side
-    );
-    if (alreadyApplied) return;
-    await updateBet({ restructures: [...currentBet.restructures, item] });
   }
 
   async function submitBet() {
@@ -1359,8 +1102,8 @@ export default function App() {
           <span>ganadores</span>
         </div>
         <div>
-          <strong>-{currentScore?.restructureCost ?? 0}</strong>
-          <span>coste</span>
+          <strong>{roundLabels[config.activeRound]}</strong>
+          <span>ronda</span>
         </div>
         <div>
           <strong>{bets.length}</strong>
@@ -1408,8 +1151,6 @@ export default function App() {
                 onPrediction={updatePrediction}
                 onOfficialResult={updateOfficialResult}
                 onBlocked={blocked}
-                predictedView={predictedMatchViews.get(match.id)}
-                onRestructure={addMatchRestructure}
               />
             ))}
           </div>
@@ -1426,7 +1167,6 @@ export default function App() {
           onBlocked={blocked}
         />
         <AdvancementPanel bet={currentBet} canWrite={canWriteBet} onBet={updateBet} onBlocked={blocked} />
-        <RestructurePanel bet={currentBet} config={config} canWrite={canWriteBet} onBet={updateBet} onBlocked={blocked} />
         {isAdmin && <AdminPanel config={config} onConfig={updateConfig} />}
 
         <section className="bento-card rules-panel">

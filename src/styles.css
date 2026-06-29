@@ -112,8 +112,7 @@ label {
 }
 
 .login-card p,
-.hero-panel p,
-.restructure-panel p {
+.hero-panel p {
   margin: 0;
   color: var(--muted);
   line-height: 1.5;
@@ -128,8 +127,7 @@ label {
 .toggle,
 .admin-result summary,
 .team-badge,
-.leader-row,
-.restructure-list div {
+.leader-row {
   display: flex;
   align-items: center;
 }
@@ -187,8 +185,7 @@ label {
 
 .primary-btn,
 .secondary-btn,
-.toggle,
-.restructure-form button {
+.toggle {
   justify-content: center;
   gap: 9px;
   min-height: 42px;
@@ -203,8 +200,7 @@ label {
 }
 
 .secondary-btn,
-.toggle,
-.restructure-form button {
+.toggle {
   background: rgba(255, 255, 255, 0.08);
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--line);
@@ -456,96 +452,6 @@ label {
   padding: 8px;
 }
 
-.predicted-match {
-  display: grid;
-  gap: 8px;
-  border: 1px solid rgba(232, 240, 141, 0.18);
-  border-radius: 8px;
-  background: rgba(232, 240, 141, 0.06);
-  padding: 10px;
-}
-
-.restructure-hints {
-  display: grid;
-  gap: 8px;
-}
-
-.restructure-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-radius: 8px;
-  background: rgba(232, 240, 141, 0.12);
-  color: var(--soft);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 8px 9px;
-}
-
-.restructure-title strong {
-  border-radius: 999px;
-  background: rgba(10, 12, 11, 0.34);
-  color: var(--ink);
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-
-.restructure-card {
-  display: grid;
-  gap: 8px;
-  border: 1px solid rgba(232, 240, 141, 0.18);
-  border-radius: 8px;
-  background: rgba(10, 12, 11, 0.22);
-  padding: 9px;
-}
-
-.restructure-card > span {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.restructure-flow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-}
-
-.restructure-flow div {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.restructure-flow small {
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-
-.restructure-flow strong {
-  overflow-wrap: anywhere;
-  font-size: 0.84rem;
-}
-
-.restructure-flow svg {
-  color: var(--soft-strong);
-}
-
-.mini-action {
-  justify-self: start;
-  min-height: 32px;
-  border-radius: 8px;
-  background: rgba(232, 240, 141, 0.16);
-  color: var(--soft-strong);
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0 10px;
-  box-shadow: inset 0 0 0 1px rgba(232, 240, 141, 0.24);
-}
-
 .score-inputs {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -735,14 +641,12 @@ label {
   flex: 1;
 }
 
-.leader-row em,
-.restructure-list em {
+.leader-row em {
   color: var(--soft-strong);
   font-style: normal;
 }
 
-.admin-awards,
-.restructure-form {
+.admin-awards {
   display: grid;
   gap: 10px;
   border-top: 1px solid var(--line);
@@ -750,8 +654,7 @@ label {
 }
 
 .round-grid,
-.rules-list,
-.restructure-list {
+.rules-list {
   display: grid;
   gap: 10px;
 }
@@ -782,23 +685,6 @@ label {
   justify-content: center;
   gap: 4px;
   padding: 0 8px;
-}
-
-.restructure-form {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.restructure-list div {
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.045);
-  padding: 0 10px;
-}
-
-.restructure-list span {
-  color: var(--muted);
 }
 
 .rules-list span {
@@ -839,8 +725,7 @@ label {
   }
 
   .hero-actions,
-  .stats-row,
-  .restructure-form {
+  .stats-row {
     grid-template-columns: 1fr;
     display: grid;
   }

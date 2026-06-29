@@ -70,12 +70,9 @@ export function scoreBet(
     normalizeName(actualAwards.topScorerName) &&
       normalizeName(bet.awards.topScorerName) === normalizeName(actualAwards.topScorerName)
   );
-  const restructureCost = bet.restructures.reduce((sum, item) => sum + item.cost, 0);
-
   total += championHit ? 15 : 0;
   total += mvpHit ? 15 : 0;
   total += topScorerHit ? 15 : 0;
-  total -= restructureCost;
 
   return {
     total,
@@ -83,8 +80,7 @@ export function scoreBet(
     winnerHits: matchScore.winnerHits,
     championHit,
     mvpHit,
-    topScorerHit,
-    restructureCost
+    topScorerHit
   };
 }
 
@@ -106,8 +102,7 @@ export function scoreMatches(bet: UserBet, matches: Match[]): ScoreBreakdown {
     winnerHits,
     championHit: false,
     mvpHit: false,
-    topScorerHit: false,
-    restructureCost: 0
+    topScorerHit: false
   };
 }
 

@@ -48,18 +48,6 @@ export type AwardsPrediction = {
   topScorerName?: string;
 };
 
-export type Restructure = {
-  id: string;
-  phase: Extract<Round, "round32" | "round16" | "quarter">;
-  teamOutId: string;
-  teamInId: string;
-  matchId?: string;
-  side?: "home" | "away";
-  sourceSlot?: string;
-  cost: number;
-  createdAt: string;
-};
-
 export type UserBet = {
   uid: string;
   displayName: string;
@@ -67,7 +55,7 @@ export type UserBet = {
   matchPredictions: Record<string, MatchPrediction>;
   advancement: Partial<Record<Round, string[]>>;
   awards: AwardsPrediction;
-  restructures: Restructure[];
+  restructures: Array<Record<string, unknown>>;
   submittedAt?: string;
   submittedScopes?: Partial<Record<WriteScope, string>>;
   updatedAt?: string;
@@ -95,5 +83,4 @@ export type ScoreBreakdown = {
   championHit: boolean;
   mvpHit: boolean;
   topScorerHit: boolean;
-  restructureCost: number;
 };
