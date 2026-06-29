@@ -50,6 +50,12 @@ for (const match of matches) {
   if (normalizedMatch.status === "completed" && normalizedMatch.winnerTeamId === undefined) {
     patch.winnerTeamId = FieldValue.delete();
   }
+  if (normalizedMatch.actualHomePenalties === undefined) {
+    patch.actualHomePenalties = FieldValue.delete();
+  }
+  if (normalizedMatch.actualAwayPenalties === undefined) {
+    patch.actualAwayPenalties = FieldValue.delete();
+  }
   if (normalizedMatch.homeTeamId && normalizedMatch.homeSlot === undefined) {
     patch.homeSlot = FieldValue.delete();
   }

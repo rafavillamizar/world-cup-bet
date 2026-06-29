@@ -30,6 +30,8 @@ export type Match = {
   awaySlot?: string;
   actualHomeScore?: number;
   actualAwayScore?: number;
+  actualHomePenalties?: number;
+  actualAwayPenalties?: number;
   winnerTeamId?: string;
   status: "scheduled" | "completed";
   predictionsLocked?: boolean;
@@ -53,7 +55,6 @@ export type UserBet = {
   displayName: string;
   status: "draft" | "submitted";
   matchPredictions: Record<string, MatchPrediction>;
-  advancement: Partial<Record<Round, string[]>>;
   awards: AwardsPrediction;
   submittedAt?: string;
   submittedScopes?: Partial<Record<WriteScope, string>>;

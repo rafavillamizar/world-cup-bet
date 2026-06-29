@@ -3,7 +3,6 @@ import {
   Award,
   BarChart3,
   CalendarDays,
-  Check,
   ChevronDown,
   CircleAlert,
   Lock,
@@ -119,7 +118,6 @@ function emptyBet(profile: UserProfile): UserBet {
     displayName: profile.displayName,
     status: "draft",
     matchPredictions: {},
-    advancement: {},
     awards: {},
     submittedScopes: {},
     updatedAt: nowIso()
@@ -173,9 +171,71 @@ function removeUndefinedFields(value: unknown): unknown {
   return value;
 }
 
-function getWinnerTeamIdFromScore(match: Match, homeScore?: number, awayScore?: number) {
-  if (homeScore === undefined || awayScore === undefined || homeScore === awayScore) return undefined;
-  return homeScore > awayScore ? match.homeTeamId : match.awayTeamId;
+function getWinnerTeamIdFromScore(
+  match: Match,
+  homeScore?: number,
+  awayScore?: number,
+  homePenalties?: number,
+  awayPenalties?: number
+) {
+  if (homeScore === undefined || awayScore === undefined) return undefined;
+  if (homeScore !== awayScore) return homeScore > awayScore ? match.homeTeamId : match.awayTeamId;
+  if (homePenalties === undefined || awayPenalties === undefined || homePenalties === awayPenalties) {
+    return undefined;
+  }
+  return homePenalties > awayPenalties ? match.homeTeamId : match.awayTeamId;
+}
+
+function hasOfficialScore(match: Match) {
+  return (
+    match.status === "completed" &&
+    match.actualHomeScore !== undefined &&
+    match.actualAwayScore !== undefined
+  );
+}
+
+function formatScorePart(score: number, penalties?: number) {
+  return penalties === undefined ? `${score}` : `${score}(${penalties})`;
+}
+
+function formatOfficialScore(match: Match, fallback = "Pendiente") {
+  if (!hasOfficialScore(match)) return fallback;
+  const hasPenaltyScore =
+    match.actualHomeScore === match.actualAwayScore &&
+    match.actualHomePenalties !== undefined && match.actualAwayPenalties !== undefined;
+  return [
+    formatScorePart(match.actualHomeScore!, hasPenaltyScore ? match.actualHomePenalties : undefined),
+    formatScorePart(match.actualAwayScore!, hasPenaltyScore ? match.actualAwayPenalties : undefined)
+  ].join(" - ");
+}
+
+function uniqueTeamIds(teamIds: Array<string | undefined>) {
+  return Array.from(new Set(teamIds.filter(Boolean) as string[]));
+}
+
+function getQualifiedTeamIds(matches: Match[], round: Round) {
+  if (round === "round32") {
+    return uniqueTeamIds(
+      matches
+        .filter((match) => match.round === "round32")
+        .flatMap((match) => [match.homeTeamId, match.awayTeamId])
+    );
+  }
+
+  const previousRoundByQualifiedRound: Partial<Record<Round, Round>> = {
+    round16: "round32",
+    quarter: "round16",
+    semi: "quarter",
+    final: "semi"
+  };
+  const previousRound = previousRoundByQualifiedRound[round];
+  if (!previousRound) return [];
+
+  return uniqueTeamIds(
+    matches
+      .filter((match) => match.round === previousRound && hasOfficialScore(match))
+      .map((match) => match.winnerTeamId)
+  );
 }
 
 function isScopeSubmitted(bet: UserBet, writeScope: WriteScope) {
@@ -399,6 +459,7 @@ function MatchCard({
   const awayWinnerTeamId = match.awayTeamId;
   const homeWinnerValue = homeWinnerTeamId ?? "home";
   const awayWinnerValue = awayWinnerTeamId ?? "away";
+  const officialScore = formatOfficialScore(match, "");
 
   return (
     <article className="match-card">
@@ -411,6 +472,13 @@ function MatchCard({
         <TeamBadge teamId={match.homeTeamId} slot={match.homeSlot} />
         <TeamBadge teamId={match.awayTeamId} slot={match.awaySlot} />
       </div>
+
+      {officialScore && (
+        <div className="official-score" aria-label="Resultado final">
+          <span>Resultado final</span>
+          <strong>{officialScore}</strong>
+        </div>
+      )}
 
       <div className="score-shell" onClick={() => disabled && onBlocked(availabilityMessage || lockMessage)}>
         <ScoreInputs
@@ -453,12 +521,44 @@ function MatchCard({
               onOfficialResult(match.id, {
                 actualHomeScore: next.homeScore,
                 actualAwayScore: next.awayScore,
-                winnerTeamId: isCompleted ? getWinnerTeamIdFromScore(match, next.homeScore, next.awayScore) : undefined,
+                actualHomePenalties: isCompleted ? match.actualHomePenalties : undefined,
+                actualAwayPenalties: isCompleted ? match.actualAwayPenalties : undefined,
+                winnerTeamId: isCompleted
+                  ? getWinnerTeamIdFromScore(
+                      match,
+                      next.homeScore,
+                      next.awayScore,
+                      match.actualHomePenalties,
+                      match.actualAwayPenalties
+                    )
+                  : undefined,
                 status: isCompleted ? "completed" : "scheduled",
                 predictionsLocked: isCompleted ? true : match.predictionsLocked
               });
             }}
           />
+          {match.round !== "group" && (
+            <label className="penalty-score">
+              Penaltis (si aplica)
+              <ScoreInputs
+                disabled={false}
+                prediction={{ homeScore: match.actualHomePenalties, awayScore: match.actualAwayPenalties }}
+                onChange={(next) =>
+                  onOfficialResult(match.id, {
+                    actualHomePenalties: next.homeScore,
+                    actualAwayPenalties: next.awayScore,
+                    winnerTeamId: getWinnerTeamIdFromScore(
+                      match,
+                      match.actualHomeScore,
+                      match.actualAwayScore,
+                      next.homeScore,
+                      next.awayScore
+                    )
+                  })
+                }
+              />
+            </label>
+          )}
           <select
             value={match.winnerTeamId ?? ""}
             onChange={(event) => onOfficialResult(match.id, { winnerTeamId: event.target.value || undefined })}
@@ -573,31 +673,7 @@ function AwardsPanel({
   );
 }
 
-function AdvancementPanel({
-  bet,
-  canWrite,
-  onBet,
-  onBlocked
-}: {
-  bet: UserBet;
-  canWrite: boolean;
-  onBet: (patch: Partial<UserBet>) => void;
-  onBlocked: (message?: string) => void;
-}) {
-  function toggle(round: Round, teamId: string, limit: number) {
-    if (!canWrite) {
-      onBlocked();
-      return;
-    }
-    const current = bet.advancement[round] ?? [];
-    const next = current.includes(teamId)
-      ? current.filter((id) => id !== teamId)
-      : current.length < limit
-        ? [...current, teamId]
-        : current;
-    onBet({ advancement: { ...bet.advancement, [round]: next } });
-  }
-
+function AdvancementPanel({ matches }: { matches: Match[] }) {
   return (
     <section className="bento-card advancement-panel">
       <div className="section-title">
@@ -605,31 +681,34 @@ function AdvancementPanel({
         <h2>Clasificados</h2>
       </div>
       <div className="round-grid">
-        {selectableRounds.map(({ round, limit }) => (
-          <details key={round}>
-            <summary>
-              {roundLabels[round]}
-              <span>
-                {(bet.advancement[round] ?? []).length}/{limit}
-              </span>
-            </summary>
-            <div className="team-chip-grid">
-              {teams.map((team) => {
-                const selected = (bet.advancement[round] ?? []).includes(team.id);
-                return (
-                  <button
-                    key={`${round}-${team.id}`}
-                    className={selected ? "team-chip selected" : "team-chip"}
-                    onClick={() => toggle(round, team.id, limit)}
-                  >
-                    {selected && <Check size={14} />}
-                    {team.shortName}
-                  </button>
-                );
-              })}
-            </div>
-          </details>
-        ))}
+        {selectableRounds.map(({ round, limit }) => {
+          const qualifiedTeamIds = getQualifiedTeamIds(matches, round);
+          return (
+            <details key={round} open={round === "round32" || qualifiedTeamIds.length > 0}>
+              <summary>
+                {roundLabels[round]}
+                <span>
+                  {qualifiedTeamIds.length}/{limit}
+                </span>
+              </summary>
+              {qualifiedTeamIds.length ? (
+                <div className="qualified-grid">
+                  {qualifiedTeamIds.map((teamId) => {
+                    const team = getTeam(teamId);
+                    return (
+                      <div className="qualified-team" key={`${round}-${teamId}`} title={team?.name ?? teamId}>
+                        <span>{team?.emoji ?? "?"}</span>
+                        <strong>{team?.shortName ?? teamId}</strong>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="empty-copy">Pendiente de resultados oficiales.</p>
+              )}
+            </details>
+          );
+        })}
       </div>
     </section>
   );
@@ -708,14 +787,7 @@ function Leaderboard({
 }
 
 function formatMatchScore(match: Match) {
-  if (
-    match.status !== "completed" ||
-    match.actualHomeScore === undefined ||
-    match.actualAwayScore === undefined
-  ) {
-    return "Pendiente";
-  }
-  return `${match.actualHomeScore} - ${match.actualAwayScore}`;
+  return formatOfficialScore(match);
 }
 
 function formatPrediction(prediction?: MatchPrediction) {
@@ -929,7 +1001,15 @@ export default function App() {
       blocked();
       return false;
     }
-    const normalized = { ...next, uid: profile.uid, displayName: profile.displayName, updatedAt: nowIso() };
+    const { advancement: _legacyAdvancement, ...betWithoutLegacyAdvancement } = next as UserBet & {
+      advancement?: unknown;
+    };
+    const normalized = {
+      ...betWithoutLegacyAdvancement,
+      uid: profile.uid,
+      displayName: profile.displayName,
+      updatedAt: nowIso()
+    };
     try {
       if (firebase.enabled && firebase.db) {
         await setDoc(doc(firebase.db, "bets", profile.uid), removeUndefinedFields(normalized) as UserBet);
@@ -1165,7 +1245,7 @@ export default function App() {
           onConfig={updateConfig}
           onBlocked={blocked}
         />
-        <AdvancementPanel bet={currentBet} canWrite={canWriteBet} onBet={updateBet} onBlocked={blocked} />
+        <AdvancementPanel matches={matches} />
         {isAdmin && <AdminPanel config={config} onConfig={updateConfig} />}
 
         <section className="bento-card rules-panel">

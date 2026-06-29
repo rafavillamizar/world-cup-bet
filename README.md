@@ -91,6 +91,8 @@ Solo un admin puede promover usuarios a `admin`.
   awaySlot?: string,
   actualHomeScore?: number,
   actualAwayScore?: number,
+  actualHomePenalties?: number,
+  actualAwayPenalties?: number,
   winnerTeamId?: string,
   status: "scheduled" | "completed",
   predictionsLocked?: boolean
@@ -116,13 +118,6 @@ Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos
       updatedAt?: string
     }
   },
-  advancement: {
-    round32?: string[],
-    round16?: string[],
-    quarter?: string[],
-    semi?: string[],
-    final?: string[]
-  },
   awards: {
     championTeamId?: string,
     mvpName?: string,
@@ -134,6 +129,8 @@ Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos
 ```
 
 La puntuacion se calcula en cliente en tiempo real comparando `bets/{uid}` con `matches` y `app/config.actualAwards`. Para una porra con dinero, el siguiente paso natural es duplicar ese calculo en Cloud Functions para guardar snapshots auditables.
+
+La vista `Clasificados` es comun a todos los usuarios y se deriva de `matches`: los clasificados a dieciseisavos salen de los equipos asignados a esa ronda, y las fases posteriores salen de los ganadores oficiales de la ronda anterior. No se guarda en `bets/{uid}`.
 
 ## Configurar Firebase desde cero
 

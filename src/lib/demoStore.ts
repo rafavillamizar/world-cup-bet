@@ -13,7 +13,6 @@ export const demoBet: UserBet = {
   displayName: demoProfile.displayName,
   status: "draft",
   matchPredictions: {},
-  advancement: {},
   awards: {}
 };
 

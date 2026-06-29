@@ -24,13 +24,13 @@ service cloud.firestore {
     function ownBetCreateAllowed(userId) {
       return signedIn()
         && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(["advancement"])
         && (
           writeOpen()
           || (
             request.resource.data.uid == userId
             && request.resource.data.status == "draft"
             && request.resource.data.matchPredictions.size() == 0
-            && request.resource.data.advancement.size() == 0
             && request.resource.data.awards.size() == 0
           )
         );
@@ -39,6 +39,7 @@ service cloud.firestore {
     function ownBetUpdateAllowed(userId) {
       return signedIn()
         && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(["advancement"])
         && writeOpen()
         && (
           resource.data.status != "submitted"

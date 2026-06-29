@@ -127,7 +127,7 @@ const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & P
 ];
 
 const round32MatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "status" | "predictionsLocked">>> = [
-  { date: "2026-06-28", venue: "Los Angeles Stadium", homeTeamId: "south-africa", awayTeamId: "canada" },
+  { date: "2026-06-28", venue: "Los Angeles Stadium", homeTeamId: "south-africa", awayTeamId: "canada", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "canada", status: "completed", predictionsLocked: true },
   { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan" },
   { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay" },
   { date: "2026-06-29", venue: "Estadio Monterrey", homeTeamId: "netherlands", awayTeamId: "morocco" },
