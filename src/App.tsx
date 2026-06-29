@@ -116,7 +116,6 @@ function emptyBet(profile: UserProfile): UserBet {
   return {
     uid: profile.uid,
     displayName: profile.displayName,
-    status: "draft",
     matchPredictions: {},
     awards: {},
     submittedScopes: {},
@@ -240,7 +239,6 @@ function getQualifiedTeamIds(matches: Match[], round: Round) {
 
 function isScopeSubmitted(bet: UserBet, writeScope: WriteScope) {
   if (writeScope === "closed") return true;
-  if (writeScope === "initial") return bet.status === "submitted" || Boolean(bet.submittedScopes?.initial);
   return Boolean(bet.submittedScopes?.[writeScope]);
 }
 
@@ -673,9 +671,9 @@ function AwardsPanel({
   );
 }
 
-function AdvancementPanel({ matches }: { matches: Match[] }) {
+function QualifiedPanel({ matches }: { matches: Match[] }) {
   return (
-    <section className="bento-card advancement-panel">
+    <section className="bento-card qualified-panel">
       <div className="section-title">
         <Users size={19} />
         <h2>Clasificados</h2>
@@ -1001,11 +999,12 @@ export default function App() {
       blocked();
       return false;
     }
-    const { advancement: _legacyAdvancement, ...betWithoutLegacyAdvancement } = next as UserBet & {
-      advancement?: unknown;
+    const { status: _legacyStatus, submittedAt: _legacySubmittedAt, ...betWithoutLegacySubmission } = next as UserBet & {
+      status?: unknown;
+      submittedAt?: unknown;
     };
     const normalized = {
-      ...betWithoutLegacyAdvancement,
+      ...betWithoutLegacySubmission,
       uid: profile.uid,
       displayName: profile.displayName,
       updatedAt: nowIso()
@@ -1062,14 +1061,12 @@ export default function App() {
 
   async function submitBet() {
     if (!currentBet) return;
-    const submittedAt = nowIso();
+    const scopeSubmittedAt = nowIso();
     const saved = await saveBet({
       ...currentBet,
-      status: "submitted",
-      submittedAt,
       submittedScopes: {
         ...currentBet.submittedScopes,
-        [config.writeScope]: submittedAt
+        [config.writeScope]: scopeSubmittedAt
       }
     });
     if (saved) {
@@ -1245,7 +1242,7 @@ export default function App() {
           onConfig={updateConfig}
           onBlocked={blocked}
         />
-        <AdvancementPanel matches={matches} />
+        <QualifiedPanel matches={matches} />
         {isAdmin && <AdminPanel config={config} onConfig={updateConfig} />}
 
         <section className="bento-card rules-panel">

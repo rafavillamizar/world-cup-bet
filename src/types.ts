@@ -53,10 +53,8 @@ export type AwardsPrediction = {
 export type UserBet = {
   uid: string;
   displayName: string;
-  status: "draft" | "submitted";
   matchPredictions: Record<string, MatchPrediction>;
   awards: AwardsPrediction;
-  submittedAt?: string;
   submittedScopes?: Partial<Record<WriteScope, string>>;
   updatedAt?: string;
 };

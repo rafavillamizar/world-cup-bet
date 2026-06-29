@@ -11,7 +11,6 @@ export const demoProfile: UserProfile = {
 export const demoBet: UserBet = {
   uid: demoProfile.uid,
   displayName: demoProfile.displayName,
-  status: "draft",
   matchPredictions: {},
   awards: {}
 };

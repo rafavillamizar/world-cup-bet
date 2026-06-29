@@ -101,7 +101,7 @@ Solo un admin puede promover usuarios a `admin`.
 
 Los 72 partidos de fase de grupos estan presembrados. Las eliminatorias arrancan como slots `TBD` para actualizarlas cuando se confirme el cuadro.
 
-Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos de ese partido aunque el usuario siga en draft y aunque `app/config.writeEnabled` este abierto. Al introducir un resultado oficial desde el panel admin, el partido se bloquea automaticamente.
+Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos de ese partido aunque `app/config.writeEnabled` este abierto. Al introducir un resultado oficial desde el panel admin, el partido se bloquea automaticamente.
 
 ### `bets/{uid}`
 
@@ -109,7 +109,6 @@ Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos
 {
   uid: string,
   displayName: string,
-  status: "draft" | "submitted",
   matchPredictions: {
     [matchId]: {
       homeScore?: number,
@@ -123,7 +122,12 @@ Cuando `predictionsLocked` es `true`, la UI impide crear o modificar pronosticos
     mvpName?: string,
     topScorerName?: string
   },
-  submittedAt?: string,
+  submittedScopes?: {
+    initial?: string,
+    round32?: string,
+    round16?: string,
+    quarter?: string
+  },
   updatedAt?: string
 }
 ```
