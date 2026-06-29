@@ -795,6 +795,13 @@ function formatPrediction(prediction?: MatchPrediction) {
   return `${prediction.homeScore} - ${prediction.awayScore}`;
 }
 
+function formatPredictionWinner(match: Match, prediction?: MatchPrediction) {
+  if (!prediction?.winnerTeamId) return "";
+  if (prediction.winnerTeamId === "home") return teamLabel(match.homeTeamId, match.homeSlot ?? "Local");
+  if (prediction.winnerTeamId === "away") return teamLabel(match.awayTeamId, match.awaySlot ?? "Visitante");
+  return teamLabel(prediction.winnerTeamId);
+}
+
 function AdminSummaryPage({
   bets,
   matches
@@ -872,6 +879,7 @@ function AdminSummaryPage({
                   {bets.map((bet) => {
                     const prediction = bet.matchPredictions[match.id];
                     const score = scoreMatch(match, prediction);
+                    const winnerLabel = formatPredictionWinner(match, prediction);
                     const statusClass = isPending
                       ? "pending"
                       : score.exact
@@ -882,7 +890,10 @@ function AdminSummaryPage({
                     return (
                       <div className={`summary-prediction ${statusClass}`} key={`${match.id}-${bet.uid}`}>
                         <strong>{bet.displayName}</strong>
-                        <span>{formatPrediction(prediction)}</span>
+                        <span className="summary-prediction-pick">
+                          <span>{formatPrediction(prediction)}</span>
+                          {winnerLabel && <small>Ganador: {winnerLabel}</small>}
+                        </span>
                         <em>{isPending ? "-" : `${score.points} pts`}</em>
                       </div>
                     );

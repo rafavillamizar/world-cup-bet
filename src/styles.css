@@ -598,24 +598,37 @@ label {
 
 .summary-prediction {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) 90px 70px;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) 70px;
   gap: 10px;
   align-items: center;
-  min-height: 38px;
+  min-height: 46px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
-  padding: 0 10px;
+  padding: 8px 10px;
 }
 
 .summary-prediction strong,
-.summary-prediction span {
+.summary-prediction-pick span,
+.summary-prediction-pick small {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.summary-prediction span {
+.summary-prediction-pick {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summary-prediction-pick span {
   color: var(--muted);
+}
+
+.summary-prediction-pick small {
+  color: var(--soft);
+  font-size: 0.74rem;
 }
 
 .summary-prediction em {
