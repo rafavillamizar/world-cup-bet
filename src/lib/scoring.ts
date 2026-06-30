@@ -24,6 +24,28 @@ function outcome(homeScore: number, awayScore: number) {
   return "draw";
 }
 
+function winnerKey(match: Match, winnerTeamId?: string) {
+  if (!winnerTeamId) return undefined;
+  if (winnerTeamId === "home" || winnerTeamId === "away") return winnerTeamId;
+  if (winnerTeamId === match.homeTeamId) return "home";
+  if (winnerTeamId === match.awayTeamId) return "away";
+  return winnerTeamId;
+}
+
+function actualKnockoutWinner(match: Match) {
+  const selectedWinner = winnerKey(match, match.winnerTeamId);
+  if (selectedWinner) return selectedWinner;
+  const actualOutcome = outcome(match.actualHomeScore!, match.actualAwayScore!);
+  return actualOutcome === "draw" ? undefined : actualOutcome;
+}
+
+function predictedKnockoutWinner(match: Match, prediction: MatchPrediction) {
+  const selectedWinner = winnerKey(match, prediction.winnerTeamId);
+  if (selectedWinner) return selectedWinner;
+  const predictedOutcome = outcome(prediction.homeScore!, prediction.awayScore!);
+  return predictedOutcome === "draw" ? undefined : predictedOutcome;
+}
+
 export function scoreMatch(match: Match, prediction?: MatchPrediction) {
   if (
     match.status !== "completed" ||
@@ -37,6 +59,17 @@ export function scoreMatch(match: Match, prediction?: MatchPrediction) {
   const exact =
     prediction!.homeScore === match.actualHomeScore &&
     prediction!.awayScore === match.actualAwayScore;
+
+  if (match.round !== "group") {
+    const actualWinner = actualKnockoutWinner(match);
+    const predictedWinner = predictedKnockoutWinner(match, prediction!);
+    const winner = Boolean(actualWinner && predictedWinner && actualWinner === predictedWinner);
+    return {
+      points: winner ? (exact ? roundPoints[match.round].exact : roundPoints[match.round].winner) : 0,
+      exact: winner && exact,
+      winner
+    };
+  }
 
   if (exact) {
     return { points: roundPoints[match.round].exact, exact: true, winner: true };

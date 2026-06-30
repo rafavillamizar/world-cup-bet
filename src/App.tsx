@@ -378,6 +378,18 @@ function getMatchAvailabilityMessage(match: Match) {
   return "";
 }
 
+function getWinnerTeamIdFromPredictionScore(
+  homeScore: number | undefined,
+  awayScore: number | undefined,
+  homeWinnerValue: string,
+  awayWinnerValue: string
+) {
+  if (homeScore === undefined || awayScore === undefined || homeScore === awayScore) {
+    return undefined;
+  }
+  return homeScore > awayScore ? homeWinnerValue : awayWinnerValue;
+}
+
 function ScoreInputs({
   prediction,
   disabled,
@@ -458,6 +470,31 @@ function MatchCard({
   const homeWinnerValue = homeWinnerTeamId ?? "home";
   const awayWinnerValue = awayWinnerTeamId ?? "away";
   const officialScore = formatOfficialScore(match, "");
+  const predictionScoreWinnerTeamId =
+    match.round === "group"
+      ? undefined
+      : getWinnerTeamIdFromPredictionScore(
+          prediction?.homeScore,
+          prediction?.awayScore,
+          homeWinnerValue,
+          awayWinnerValue
+        );
+
+  function updateMatchPrediction(next: MatchPrediction) {
+    const automaticWinnerTeamId =
+      match.round === "group"
+        ? undefined
+        : getWinnerTeamIdFromPredictionScore(
+            next.homeScore,
+            next.awayScore,
+            homeWinnerValue,
+            awayWinnerValue
+          );
+    onPrediction(match.id, {
+      ...next,
+      winnerTeamId: automaticWinnerTeamId ?? next.winnerTeamId
+    });
+  }
 
   return (
     <article className="match-card">
@@ -482,7 +519,7 @@ function MatchCard({
         <ScoreInputs
           prediction={prediction}
           disabled={disabled}
-          onChange={(next) => onPrediction(match.id, next)}
+          onChange={updateMatchPrediction}
         />
       </div>
 
@@ -493,8 +530,8 @@ function MatchCard({
         <label className="winner-select">
           Ganador tras 120 min/penaltis
           <select
-            disabled={disabled}
-            value={prediction?.winnerTeamId ?? ""}
+            disabled={disabled || Boolean(predictionScoreWinnerTeamId)}
+            value={predictionScoreWinnerTeamId ?? prediction?.winnerTeamId ?? ""}
             onChange={(event) => onPrediction(match.id, { ...prediction, winnerTeamId: event.target.value || undefined })}
           >
             <option value="">Selecciona</option>
