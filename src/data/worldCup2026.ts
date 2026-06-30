@@ -128,9 +128,9 @@ const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & P
 
 const round32MatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "status" | "predictionsLocked">>> = [
   { date: "2026-06-28", venue: "Los Angeles Stadium", homeTeamId: "south-africa", awayTeamId: "canada", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "canada", status: "completed", predictionsLocked: true },
-  { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan" },
-  { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay" },
-  { date: "2026-06-29", venue: "Estadio Monterrey", homeTeamId: "netherlands", awayTeamId: "morocco" },
+  { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "brazil", status: "completed", predictionsLocked: true },
+  { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 3, actualAwayPenalties: 4, winnerTeamId: "paraguay", status: "completed", predictionsLocked: true },
+  { date: "2026-06-29", venue: "Estadio Monterrey", homeTeamId: "netherlands", awayTeamId: "morocco", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 2, actualAwayPenalties: 3, winnerTeamId: "morocco", status: "completed", predictionsLocked: true },
   { date: "2026-06-30", venue: "Dallas Stadium", homeTeamId: "ivory-coast", awayTeamId: "norway" },
   { date: "2026-06-30", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "sweden" },
   { date: "2026-06-30", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "ecuador" },
@@ -150,6 +150,12 @@ const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
   quarter: Array.from({ length: 4 }, (_, index) => `Cuartos ${index + 1}`),
   semi: Array.from({ length: 2 }, (_, index) => `Semifinal ${index + 1}`),
   final: ["Final"]
+};
+
+const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Array<Partial<Match>>>> = {
+  round16: [
+    { homeTeamId: "canada", awayTeamId: "morocco" }
+  ]
 };
 
 const knockoutRoundOrder: Array<Exclude<Round, "group" | "round32">> = ["round16", "quarter", "semi", "final"];
@@ -176,14 +182,18 @@ export const matches: Match[] = [
     status: match.status ?? "scheduled"
   })),
   ...knockoutRoundOrder.flatMap((round, roundIndex) =>
-    knockoutLabels[round].map((label, index) => ({
-      id: `${round}-${String(index + 1).padStart(2, "0")}`,
-      order: knockoutRoundOrderOffsets[round] + index,
-      round,
-      homeSlot: label,
-      awaySlot: "Rival por definir",
-      status: "scheduled" as const
-    }))
+    knockoutLabels[round].map((label, index) => {
+      const concreteMatch = knockoutMatchRows[round]?.[index] ?? {};
+      return {
+        id: `${round}-${String(index + 1).padStart(2, "0")}`,
+        order: knockoutRoundOrderOffsets[round] + index,
+        round,
+        homeSlot: concreteMatch.homeTeamId ? undefined : label,
+        awaySlot: concreteMatch.awayTeamId ? undefined : "Rival por definir",
+        status: "scheduled" as const,
+        ...concreteMatch
+      };
+    })
   )
 ];
 
