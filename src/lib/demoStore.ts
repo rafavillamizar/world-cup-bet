@@ -8,9 +8,16 @@ export const demoProfile: UserProfile = {
   role: "admin"
 };
 
+export const demoParticipantProfile: UserProfile = {
+  uid: "demo-player",
+  displayName: "Participante demo",
+  email: "player@worldcup.local",
+  role: "participant"
+};
+
 export const demoBet: UserBet = {
-  uid: demoProfile.uid,
-  displayName: demoProfile.displayName,
+  uid: demoParticipantProfile.uid,
+  displayName: demoParticipantProfile.displayName,
   matchPredictions: {},
   awards: {}
 };

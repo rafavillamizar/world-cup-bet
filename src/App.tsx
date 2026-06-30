@@ -33,7 +33,7 @@ import {
   updateDoc
 } from "firebase/firestore";
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
-import { demoBet, demoProfile, demoState } from "./lib/demoStore";
+import { demoBet, demoParticipantProfile, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
 import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
@@ -240,6 +240,11 @@ function getQualifiedTeamIds(matches: Match[], round: Round) {
 function isScopeSubmitted(bet: UserBet, writeScope: WriteScope) {
   if (writeScope === "closed") return true;
   return Boolean(bet.submittedScopes?.[writeScope]);
+}
+
+function filterParticipantBets(bets: UserBet[], profiles: UserProfile[]) {
+  const rolesByUid = new Map(profiles.map((item) => [item.uid, item.role]));
+  return bets.filter((bet) => rolesByUid.get(bet.uid) === "participant");
 }
 
 function LoginView() {
@@ -515,18 +520,20 @@ function MatchCard({
         </div>
       )}
 
-      <div className="score-shell" onClick={() => disabled && onBlocked(availabilityMessage || lockMessage)}>
-        <ScoreInputs
-          prediction={prediction}
-          disabled={disabled}
-          onChange={updateMatchPrediction}
-        />
-      </div>
+      {!isAdmin && (
+        <div className="score-shell" onClick={() => disabled && onBlocked(availabilityMessage || lockMessage)}>
+          <ScoreInputs
+            prediction={prediction}
+            disabled={disabled}
+            onChange={updateMatchPrediction}
+          />
+        </div>
+      )}
 
-      {lockMessage && <p className="locked-copy">{lockMessage}</p>}
-      {availabilityMessage && <p className="locked-copy">{availabilityMessage}</p>}
+      {!isAdmin && lockMessage && <p className="locked-copy">{lockMessage}</p>}
+      {!isAdmin && availabilityMessage && <p className="locked-copy">{availabilityMessage}</p>}
 
-      {match.round !== "group" && (
+      {!isAdmin && match.round !== "group" && (
         <label className="winner-select">
           Ganador tras 120 min/penaltis
           <select
@@ -783,6 +790,34 @@ function AdminPanel({
         Mensaje de bloqueo
         <input value={config.lockedMessage} onChange={(event) => onConfig({ lockedMessage: event.target.value })} />
       </label>
+      <div className="admin-awards">
+        <strong>Valores oficiales</strong>
+        <select
+          value={config.actualAwards.championTeamId ?? ""}
+          onChange={(event) =>
+            onConfig({ actualAwards: { ...config.actualAwards, championTeamId: event.target.value } })
+          }
+        >
+          <option value="">Campeon oficial</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
+        </select>
+        <input
+          placeholder="MVP oficial"
+          value={config.actualAwards.mvpName ?? ""}
+          onChange={(event) => onConfig({ actualAwards: { ...config.actualAwards, mvpName: event.target.value } })}
+        />
+        <input
+          placeholder="Goleador oficial"
+          value={config.actualAwards.topScorerName ?? ""}
+          onChange={(event) =>
+            onConfig({ actualAwards: { ...config.actualAwards, topScorerName: event.target.value } })
+          }
+        />
+      </div>
     </section>
   );
 }
@@ -970,6 +1005,9 @@ export default function App() {
   );
   const [matches, setMatches] = useState<Match[]>(firebase.enabled ? [] : demoState.matches);
   const [bets, setBets] = useState<UserBet[]>(firebase.enabled ? [] : demoState.bets);
+  const [profiles, setProfiles] = useState<UserProfile[]>(
+    firebase.enabled ? [] : [demoProfile, demoParticipantProfile]
+  );
   const [toast, setToast] = useState("");
   const [bootstrapError, setBootstrapError] = useState("");
   const [roundFilter, setRoundFilter] = useState<Round>("group");
@@ -1011,11 +1049,15 @@ export default function App() {
     const unsubBets = onSnapshot(collection(firebase.db, "bets"), (snapshot) => {
       setBets(snapshot.docs.map((item) => item.data() as UserBet));
     });
+    const unsubUsers = onSnapshot(collection(firebase.db, "users"), (snapshot) => {
+      setProfiles(snapshot.docs.map((item) => item.data() as UserProfile));
+    });
     return () => {
       unsubProfile();
       unsubConfig();
       unsubMatches();
       unsubBets();
+      unsubUsers();
     };
   }, [authUser]);
 
@@ -1027,14 +1069,15 @@ export default function App() {
   const isAdmin = profile?.role === "admin";
   const currentScopeSubmitted = currentBet ? isScopeSubmitted(currentBet, config.writeScope) : false;
   const canWriteBet = Boolean(
-    isAdmin ||
-      (config.writeEnabled &&
-        config.writeScope !== "closed" &&
-        currentBet &&
-        !currentScopeSubmitted)
+    !isAdmin &&
+      config.writeEnabled &&
+      config.writeScope !== "closed" &&
+      currentBet &&
+      !currentScopeSubmitted
   );
   const currentScore = currentBet ? scoreBet(currentBet, matches, config.actualAwards) : null;
   const filteredMatches = matches.filter((match) => match.round === roundFilter);
+  const participantBets = useMemo(() => filterParticipantBets(bets, profiles), [bets, profiles]);
 
   function blocked(message?: string) {
     setToast(message || config.lockedMessage);
@@ -1198,10 +1241,14 @@ export default function App() {
       <section className="hero-panel">
         <div>
           <span className="eyebrow">Mundial 2026</span>
-          <h1>Hola {profile.displayName}, tienes {currentScore?.total ?? 0} puntos.</h1>
+          <h1>
+            {isAdmin
+              ? `Hola ${profile.displayName}, gestiona los resultados.`
+              : `Hola ${profile.displayName}, tienes ${currentScore?.total ?? 0} puntos.`}
+          </h1>
           <p>
             Escritura {config.writeEnabled ? "abierta" : "cerrada"} · {writeScopeLabels[config.writeScope]} ·{" "}
-            {currentScopeSubmitted ? "enviado" : "borrador"}
+            {isAdmin ? "admin" : currentScopeSubmitted ? "enviado" : "borrador"}
           </p>
         </div>
         <div className="hero-actions">
@@ -1209,10 +1256,12 @@ export default function App() {
             <LogOut size={17} />
             Salir
           </button>
-          <button className="primary-btn" onClick={submitBet} disabled={!canWriteBet}>
-            <Save size={17} />
-            Enviar porra
-          </button>
+          {!isAdmin && (
+            <button className="primary-btn" onClick={submitBet} disabled={!canWriteBet}>
+              <Save size={17} />
+              Enviar porra
+            </button>
+          )}
         </div>
       </section>
 
@@ -1230,7 +1279,7 @@ export default function App() {
           <span>ronda</span>
         </div>
         <div>
-          <strong>{bets.length}</strong>
+          <strong>{participantBets.length}</strong>
           <span>jugadores</span>
         </div>
       </section>
@@ -1249,7 +1298,7 @@ export default function App() {
       )}
 
       {isAdmin && adminView === "summary" ? (
-        <AdminSummaryPage bets={bets} matches={matches} />
+        <AdminSummaryPage bets={participantBets} matches={matches} />
       ) : (
         <section className="dashboard-grid">
         <section className="bento-card match-panel">
@@ -1280,16 +1329,18 @@ export default function App() {
           </div>
         </section>
 
-        <Leaderboard bets={bets} matches={matches} config={config} />
-        <AwardsPanel
-          bet={currentBet}
-          config={config}
-          canWrite={canWriteBet}
-          isAdmin={Boolean(isAdmin)}
-          onBet={updateBet}
-          onConfig={updateConfig}
-          onBlocked={blocked}
-        />
+        <Leaderboard bets={participantBets} matches={matches} config={config} />
+        {!isAdmin && (
+          <AwardsPanel
+            bet={currentBet}
+            config={config}
+            canWrite={canWriteBet}
+            isAdmin={false}
+            onBet={updateBet}
+            onConfig={updateConfig}
+            onBlocked={blocked}
+          />
+        )}
         <QualifiedPanel matches={matches} />
         {isAdmin && <AdminPanel config={config} onConfig={updateConfig} />}
 
