@@ -131,18 +131,18 @@ const round32MatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> &
   { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "brazil", status: "completed", predictionsLocked: true },
   { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 3, actualAwayPenalties: 4, winnerTeamId: "paraguay", status: "completed", predictionsLocked: true },
   { date: "2026-06-29", venue: "Estadio Monterrey", homeTeamId: "netherlands", awayTeamId: "morocco", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 2, actualAwayPenalties: 3, winnerTeamId: "morocco", status: "completed", predictionsLocked: true },
-  { date: "2026-06-30", venue: "Dallas Stadium", homeTeamId: "ivory-coast", awayTeamId: "norway" },
-  { date: "2026-06-30", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "sweden" },
-  { date: "2026-06-30", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "ecuador" },
-  { date: "2026-07-01", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "dr-congo" },
-  { date: "2026-07-01", venue: "Seattle Stadium", homeTeamId: "belgium", awayTeamId: "senegal" },
-  { date: "2026-07-01", venue: "San Francisco Bay Area Stadium", homeTeamId: "usa", awayTeamId: "bosnia" },
-  { date: "2026-07-02", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "austria" },
-  { date: "2026-07-02", venue: "Toronto Stadium", homeTeamId: "portugal", awayTeamId: "croatia" },
-  { date: "2026-07-02", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "algeria" },
-  { date: "2026-07-03", venue: "Dallas Stadium", homeTeamId: "australia", awayTeamId: "egypt" },
-  { date: "2026-07-03", venue: "Miami Stadium", homeTeamId: "argentina", awayTeamId: "cape-verde" },
-  { date: "2026-07-03", venue: "Kansas City Stadium", homeTeamId: "colombia", awayTeamId: "ghana" }
+  { date: "2026-06-30", venue: "Dallas Stadium", homeTeamId: "ivory-coast", awayTeamId: "norway", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "norway", status: "completed", predictionsLocked: true },
+  { date: "2026-06-30", venue: "New York New Jersey Stadium", homeTeamId: "france", awayTeamId: "sweden", actualHomeScore: 3, actualAwayScore: 0, winnerTeamId: "france", status: "completed", predictionsLocked: true },
+  { date: "2026-06-30", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "ecuador", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "mexico", status: "completed", predictionsLocked: true },
+  { date: "2026-07-01", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "dr-congo", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "england", status: "completed", predictionsLocked: true },
+  { date: "2026-07-01", venue: "Seattle Stadium", homeTeamId: "belgium", awayTeamId: "senegal", actualHomeScore: 3, actualAwayScore: 2, winnerTeamId: "belgium", status: "completed", predictionsLocked: true },
+  { date: "2026-07-01", venue: "San Francisco Bay Area Stadium", homeTeamId: "usa", awayTeamId: "bosnia", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "usa", status: "completed", predictionsLocked: true },
+  { date: "2026-07-02", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "austria", actualHomeScore: 3, actualAwayScore: 0, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
+  { date: "2026-07-02", venue: "Toronto Stadium", homeTeamId: "portugal", awayTeamId: "croatia", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "portugal", status: "completed", predictionsLocked: true },
+  { date: "2026-07-02", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "algeria", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "switzerland", status: "completed", predictionsLocked: true },
+  { date: "2026-07-03", venue: "Dallas Stadium", homeTeamId: "australia", awayTeamId: "egypt", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 2, actualAwayPenalties: 4, winnerTeamId: "egypt", status: "completed", predictionsLocked: true },
+  { date: "2026-07-03", venue: "Miami Stadium", homeTeamId: "argentina", awayTeamId: "cape-verde", actualHomeScore: 3, actualAwayScore: 2, winnerTeamId: "argentina", status: "completed", predictionsLocked: true },
+  { date: "2026-07-03", venue: "Kansas City Stadium", homeTeamId: "colombia", awayTeamId: "ghana", actualHomeScore: 1, actualAwayScore: 0, winnerTeamId: "colombia", status: "completed", predictionsLocked: true }
 ];
 
 const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
@@ -154,7 +154,14 @@ const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
 
 const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Array<Partial<Match>>>> = {
   round16: [
-    { homeTeamId: "canada", awayTeamId: "morocco" }
+    { homeTeamId: "paraguay", awayTeamId: "france" },
+    { homeTeamId: "canada", awayTeamId: "morocco" },
+    { homeTeamId: "portugal", awayTeamId: "spain" },
+    { homeTeamId: "usa", awayTeamId: "belgium" },
+    { homeTeamId: "brazil", awayTeamId: "norway" },
+    { homeTeamId: "mexico", awayTeamId: "england" },
+    { homeTeamId: "argentina", awayTeamId: "egypt" },
+    { homeTeamId: "switzerland", awayTeamId: "colombia" }
   ]
 };
 
@@ -199,8 +206,8 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
-  writeScope: "round32",
-  activeRound: "round32",
+  writeScope: "round16",
+  activeRound: "round16",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}
 } as const;

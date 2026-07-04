@@ -882,16 +882,29 @@ function AdminSummaryPage({
   matches: Match[];
 }) {
   const [dateFilter, setDateFilter] = useState("");
+  const [roundFilter, setRoundFilter] = useState<Round>("round16");
 
   const availableDates = useMemo(
     () =>
-      Array.from(new Set(matches.map((match) => match.date).filter(Boolean) as string[])).sort(),
-    [matches]
+      Array.from(
+        new Set(
+          matches
+            .filter((match) => match.round === roundFilter)
+            .map((match) => match.date)
+            .filter(Boolean) as string[]
+        )
+      ).sort(),
+    [matches, roundFilter]
   );
 
   const visibleMatches = useMemo(
-    () => matches.filter((match) => !dateFilter || match.date === dateFilter),
-    [dateFilter, matches]
+    () =>
+      matches.filter(
+        (match) =>
+          match.round === roundFilter &&
+          (!dateFilter || match.date === dateFilter)
+      ),
+    [dateFilter, matches, roundFilter]
   );
 
   const rows = useMemo(
@@ -911,6 +924,22 @@ function AdminSummaryPage({
         </div>
 
         <div className="summary-filter">
+          <label>
+            Ronda
+            <select
+              value={roundFilter}
+              onChange={(event) => {
+                setRoundFilter(event.target.value as Round);
+                setDateFilter("");
+              }}
+            >
+              {(Object.keys(roundLabels) as Round[]).map((round) => (
+                <option key={round} value={round}>
+                  {roundLabels[round]}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Fecha
             <select value={dateFilter} onChange={(event) => setDateFilter(event.target.value)}>
@@ -982,7 +1011,7 @@ function AdminSummaryPage({
           <Trophy size={19} />
           <h2>Clasificacion</h2>
         </div>
-        <p>{dateFilter ? `Solo partidos del ${dateFilter}` : "Todos los partidos visibles"}</p>
+        <p>{dateFilter ? `${roundLabels[roundFilter]} del ${dateFilter}` : `Todos: ${roundLabels[roundFilter]}`}</p>
         {rows.map((row, index) => (
           <div className="leader-row" key={row.bet.uid}>
             <span>{index + 1}</span>
