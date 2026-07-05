@@ -47,7 +47,13 @@ for (const match of matches) {
       ? { ...match, predictionsLocked: true }
       : match;
   const patch: Record<string, unknown> = { ...normalizedMatch };
-  if (normalizedMatch.status === "completed" && normalizedMatch.winnerTeamId === undefined) {
+  if (normalizedMatch.actualHomeScore === undefined) {
+    patch.actualHomeScore = FieldValue.delete();
+  }
+  if (normalizedMatch.actualAwayScore === undefined) {
+    patch.actualAwayScore = FieldValue.delete();
+  }
+  if (normalizedMatch.winnerTeamId === undefined) {
     patch.winnerTeamId = FieldValue.delete();
   }
   if (normalizedMatch.actualHomePenalties === undefined) {
@@ -61,6 +67,9 @@ for (const match of matches) {
   }
   if (normalizedMatch.awayTeamId && normalizedMatch.awaySlot === undefined) {
     patch.awaySlot = FieldValue.delete();
+  }
+  if (normalizedMatch.predictionsLocked === undefined) {
+    patch.predictionsLocked = FieldValue.delete();
   }
   batch.set(db.doc(`matches/${match.id}`), patch, { merge: true });
 }

@@ -154,14 +154,20 @@ const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
 
 const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Array<Partial<Match>>>> = {
   round16: [
-    { homeTeamId: "paraguay", awayTeamId: "france" },
-    { homeTeamId: "canada", awayTeamId: "morocco" },
-    { homeTeamId: "portugal", awayTeamId: "spain" },
-    { homeTeamId: "usa", awayTeamId: "belgium" },
-    { homeTeamId: "brazil", awayTeamId: "norway" },
-    { homeTeamId: "mexico", awayTeamId: "england" },
-    { homeTeamId: "argentina", awayTeamId: "egypt" },
-    { homeTeamId: "switzerland", awayTeamId: "colombia" }
+    { date: "2026-07-04", venue: "Philadelphia Stadium", homeTeamId: "paraguay", awayTeamId: "france", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "france", status: "completed", predictionsLocked: true },
+    { date: "2026-07-04", venue: "Houston Stadium", homeTeamId: "canada", awayTeamId: "morocco", actualHomeScore: 0, actualAwayScore: 3, winnerTeamId: "morocco", status: "completed", predictionsLocked: true },
+    { order: 124, date: "2026-07-06", venue: "Dallas Stadium", homeTeamId: "portugal", awayTeamId: "spain" },
+    { order: 125, date: "2026-07-06", venue: "Seattle Stadium", homeTeamId: "usa", awayTeamId: "belgium" },
+    { order: 122, date: "2026-07-05", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "norway" },
+    { order: 123, date: "2026-07-05", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "england" },
+    { date: "2026-07-07", venue: "Atlanta Stadium", homeTeamId: "argentina", awayTeamId: "egypt" },
+    { date: "2026-07-07", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "colombia" }
+  ],
+  quarter: [
+    { date: "2026-07-09", venue: "Boston Stadium", homeTeamId: "france", awayTeamId: "morocco" },
+    { date: "2026-07-10", venue: "Los Angeles Stadium", homeSlot: "Ganador Portugal/Espana", awaySlot: "Ganador USA/Belgica" },
+    { date: "2026-07-11", venue: "Miami Stadium", homeSlot: "Ganador Brasil/Noruega", awaySlot: "Ganador Mexico/Inglaterra" },
+    { date: "2026-07-11", venue: "Kansas City Stadium", homeSlot: "Ganador Argentina/Egipto", awaySlot: "Ganador Suiza/Colombia" }
   ]
 };
 
