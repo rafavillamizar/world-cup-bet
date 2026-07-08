@@ -156,18 +156,18 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
   round16: [
     { date: "2026-07-04", venue: "Philadelphia Stadium", homeTeamId: "paraguay", awayTeamId: "france", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "france", status: "completed", predictionsLocked: true },
     { date: "2026-07-04", venue: "Houston Stadium", homeTeamId: "canada", awayTeamId: "morocco", actualHomeScore: 0, actualAwayScore: 3, winnerTeamId: "morocco", status: "completed", predictionsLocked: true },
-    { order: 124, date: "2026-07-06", venue: "Dallas Stadium", homeTeamId: "portugal", awayTeamId: "spain" },
-    { order: 125, date: "2026-07-06", venue: "Seattle Stadium", homeTeamId: "usa", awayTeamId: "belgium" },
-    { order: 122, date: "2026-07-05", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "norway" },
-    { order: 123, date: "2026-07-05", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "england" },
-    { date: "2026-07-07", venue: "Atlanta Stadium", homeTeamId: "argentina", awayTeamId: "egypt" },
-    { date: "2026-07-07", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "colombia" }
+    { order: 124, date: "2026-07-06", venue: "Dallas Stadium", homeTeamId: "portugal", awayTeamId: "spain", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
+    { order: 125, date: "2026-07-06", venue: "Seattle Stadium", homeTeamId: "usa", awayTeamId: "belgium", actualHomeScore: 1, actualAwayScore: 4, winnerTeamId: "belgium", status: "completed", predictionsLocked: true },
+    { order: 122, date: "2026-07-05", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "norway", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "norway", status: "completed", predictionsLocked: true },
+    { order: 123, date: "2026-07-05", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "england", actualHomeScore: 2, actualAwayScore: 3, winnerTeamId: "england", status: "completed", predictionsLocked: true },
+    { date: "2026-07-07", venue: "Atlanta Stadium", homeTeamId: "argentina", awayTeamId: "egypt", actualHomeScore: 3, actualAwayScore: 2, winnerTeamId: "argentina", status: "completed", predictionsLocked: true },
+    { date: "2026-07-07", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "colombia", actualHomeScore: 0, actualAwayScore: 0, actualHomePenalties: 4, actualAwayPenalties: 3, winnerTeamId: "switzerland", status: "completed", predictionsLocked: true }
   ],
   quarter: [
     { date: "2026-07-09", venue: "Boston Stadium", homeTeamId: "france", awayTeamId: "morocco" },
-    { date: "2026-07-10", venue: "Los Angeles Stadium", homeSlot: "Ganador Portugal/Espana", awaySlot: "Ganador USA/Belgica" },
-    { date: "2026-07-11", venue: "Miami Stadium", homeSlot: "Ganador Brasil/Noruega", awaySlot: "Ganador Mexico/Inglaterra" },
-    { date: "2026-07-11", venue: "Kansas City Stadium", homeSlot: "Ganador Argentina/Egipto", awaySlot: "Ganador Suiza/Colombia" }
+    { date: "2026-07-10", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "belgium" },
+    { date: "2026-07-11", venue: "Miami Stadium", homeTeamId: "norway", awayTeamId: "england" },
+    { date: "2026-07-11", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "switzerland" }
   ]
 };
 
@@ -212,8 +212,8 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
-  writeScope: "round16",
-  activeRound: "round16",
+  writeScope: "quarter",
+  activeRound: "quarter",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}
 } as const;

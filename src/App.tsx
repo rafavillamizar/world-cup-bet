@@ -882,7 +882,7 @@ function AdminSummaryPage({
   matches: Match[];
 }) {
   const [dateFilter, setDateFilter] = useState("");
-  const [roundFilter, setRoundFilter] = useState<Round>("round16");
+  const [roundFilter, setRoundFilter] = useState<Round>("quarter");
 
   const availableDates = useMemo(
     () =>
