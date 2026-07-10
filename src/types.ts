@@ -19,7 +19,6 @@ export type Team = {
 
 export type Match = {
   id: string;
-  order: number;
   round: Round;
   group?: string;
   date?: string;

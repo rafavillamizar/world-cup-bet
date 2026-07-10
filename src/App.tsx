@@ -27,8 +27,6 @@ import {
   doc,
   getDoc,
   onSnapshot,
-  orderBy,
-  query,
   setDoc,
   updateDoc
 } from "firebase/firestore";
@@ -65,8 +63,35 @@ const writeScopeLabels: Record<WriteScope, string> = {
 const preBetGroupMatchCount = 8;
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
+const roundSortOrder: Record<Round, number> = {
+  group: 0,
+  round32: 1,
+  round16: 2,
+  quarter: 3,
+  semi: 4,
+  final: 5
+};
+
 function nowIso() {
   return new Date().toISOString();
+}
+
+function getMatchSequence(match: Match) {
+  const sequence = match.id.match(/(\d+)$/)?.[1];
+  return sequence ? Number(sequence) : Number.MAX_SAFE_INTEGER;
+}
+
+function compareMatches(a: Match, b: Match) {
+  return (
+    roundSortOrder[a.round] - roundSortOrder[b.round] ||
+    (a.date ?? "").localeCompare(b.date ?? "") ||
+    getMatchSequence(a) - getMatchSequence(b) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+function sortMatches(matches: Match[]) {
+  return [...matches].sort(compareMatches);
 }
 
 function useVersionRefresh() {
@@ -133,7 +158,7 @@ function isPredictionLocked(match?: Match) {
 
 function getPredictionLockMessage(match?: Match) {
   if (!match) return "";
-  if (match.round === "group" && match.order >= 1 && match.order <= preBetGroupMatchCount) {
+  if (match.round === "group" && getMatchSequence(match) <= preBetGroupMatchCount) {
     return "Pronostico cerrado: partido previo al inicio de la porra.";
   }
   if (match.predictionsLocked) {
@@ -899,10 +924,12 @@ function AdminSummaryPage({
 
   const visibleMatches = useMemo(
     () =>
-      matches.filter(
-        (match) =>
-          match.round === roundFilter &&
-          (!dateFilter || match.date === dateFilter)
+      sortMatches(
+        matches.filter(
+          (match) =>
+            match.round === roundFilter &&
+            (!dateFilter || match.date === dateFilter)
+        )
       ),
     [dateFilter, matches, roundFilter]
   );
@@ -1032,7 +1059,7 @@ export default function App() {
   const [config, setConfig] = useState<AppConfig>(
     firebase.enabled ? ({ ...defaultAppConfig } as AppConfig) : demoState.config
   );
-  const [matches, setMatches] = useState<Match[]>(firebase.enabled ? [] : demoState.matches);
+  const [matches, setMatches] = useState<Match[]>(firebase.enabled ? [] : sortMatches(demoState.matches));
   const [bets, setBets] = useState<UserBet[]>(firebase.enabled ? [] : demoState.bets);
   const [profiles, setProfiles] = useState<UserProfile[]>(
     firebase.enabled ? [] : [demoProfile, demoParticipantProfile]
@@ -1071,9 +1098,9 @@ export default function App() {
     const unsubConfig = onSnapshot(doc(firebase.db, "app", "config"), (snapshot) => {
       setConfig(snapshot.exists() ? ({ ...defaultAppConfig, ...snapshot.data() } as AppConfig) : ({ ...defaultAppConfig } as AppConfig));
     });
-    const unsubMatches = onSnapshot(query(collection(firebase.db, "matches"), orderBy("order", "asc")), (snapshot) => {
+    const unsubMatches = onSnapshot(collection(firebase.db, "matches"), (snapshot) => {
       const remoteMatches = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as Match);
-      setMatches(remoteMatches.length ? remoteMatches : seedMatches);
+      setMatches(sortMatches(remoteMatches.length ? remoteMatches : seedMatches));
     });
     const unsubBets = onSnapshot(collection(firebase.db, "bets"), (snapshot) => {
       setBets(snapshot.docs.map((item) => item.data() as UserBet));
@@ -1105,7 +1132,10 @@ export default function App() {
       !currentScopeSubmitted
   );
   const currentScore = currentBet ? scoreBet(currentBet, matches, config.actualAwards) : null;
-  const filteredMatches = matches.filter((match) => match.round === roundFilter);
+  const filteredMatches = useMemo(
+    () => sortMatches(matches.filter((match) => match.round === roundFilter)),
+    [matches, roundFilter]
+  );
   const participantBets = useMemo(() => filterParticipantBets(bets, profiles), [bets, profiles]);
 
   function blocked(message?: string) {
@@ -1213,7 +1243,7 @@ export default function App() {
         await updateDoc(doc(firebase.db, "matches", matchId), toFirestorePatch(patch));
       } else {
         demoState.matches = demoState.matches.map((match) => (match.id === matchId ? { ...match, ...patch } : match));
-        setMatches([...demoState.matches]);
+        setMatches(sortMatches(demoState.matches));
       }
     } catch (error) {
       console.error(error);

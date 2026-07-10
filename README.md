@@ -80,7 +80,6 @@ Solo un admin puede promover usuarios a `admin`.
 ```ts
 {
   id: string,
-  order: number,
   round: "group" | "round32" | "round16" | "quarter" | "semi" | "final",
   group?: string,
   date?: string,

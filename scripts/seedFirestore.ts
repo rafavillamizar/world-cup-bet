@@ -47,6 +47,7 @@ for (const match of matches) {
       ? { ...match, predictionsLocked: true }
       : match;
   const patch: Record<string, unknown> = { ...normalizedMatch };
+  patch.order = FieldValue.delete();
   if (normalizedMatch.actualHomeScore === undefined) {
     patch.actualHomeScore = FieldValue.delete();
   }

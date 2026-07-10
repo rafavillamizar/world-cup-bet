@@ -51,7 +51,7 @@ export const teams: Team[] = [
   { id: "panama", name: "Panama", shortName: "PAN", group: "L", flagCode: "pa", emoji: "🇵🇦" }
 ];
 
-const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "actualHomeScore" | "actualAwayScore" | "winnerTeamId" | "status" | "predictionsLocked">>> = [
+const groupMatchRows: Array<Omit<Match, "id" | "round" | "status"> & Partial<Pick<Match, "actualHomeScore" | "actualAwayScore" | "winnerTeamId" | "status" | "predictionsLocked">>> = [
   { group: "A", date: "2026-06-11", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "south-africa", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "mexico", status: "completed", predictionsLocked: true },
   { group: "A", date: "2026-06-11", venue: "Estadio Guadalajara", homeTeamId: "south-korea", awayTeamId: "czechia", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "south-korea", status: "completed", predictionsLocked: true },
   { group: "B", date: "2026-06-12", venue: "Toronto Stadium", homeTeamId: "canada", awayTeamId: "bosnia", actualHomeScore: 1, actualAwayScore: 1, status: "completed", predictionsLocked: true },
@@ -126,7 +126,7 @@ const groupMatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & P
   { group: "K", date: "2026-06-27", venue: "Atlanta Stadium", homeTeamId: "dr-congo", awayTeamId: "uzbekistan", actualHomeScore: 3, actualAwayScore: 1, winnerTeamId: "dr-congo", status: "completed", predictionsLocked: true }
 ];
 
-const round32MatchRows: Array<Omit<Match, "id" | "order" | "round" | "status"> & Partial<Pick<Match, "status" | "predictionsLocked">>> = [
+const round32MatchRows: Array<Omit<Match, "id" | "round" | "status"> & Partial<Pick<Match, "status" | "predictionsLocked">>> = [
   { date: "2026-06-28", venue: "Los Angeles Stadium", homeTeamId: "south-africa", awayTeamId: "canada", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "canada", status: "completed", predictionsLocked: true },
   { date: "2026-06-29", venue: "Houston Stadium", homeTeamId: "brazil", awayTeamId: "japan", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "brazil", status: "completed", predictionsLocked: true },
   { date: "2026-06-29", venue: "Boston Stadium", homeTeamId: "germany", awayTeamId: "paraguay", actualHomeScore: 1, actualAwayScore: 1, actualHomePenalties: 3, actualAwayPenalties: 4, winnerTeamId: "paraguay", status: "completed", predictionsLocked: true },
@@ -156,10 +156,10 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
   round16: [
     { date: "2026-07-04", venue: "Philadelphia Stadium", homeTeamId: "paraguay", awayTeamId: "france", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "france", status: "completed", predictionsLocked: true },
     { date: "2026-07-04", venue: "Houston Stadium", homeTeamId: "canada", awayTeamId: "morocco", actualHomeScore: 0, actualAwayScore: 3, winnerTeamId: "morocco", status: "completed", predictionsLocked: true },
-    { order: 124, date: "2026-07-06", venue: "Dallas Stadium", homeTeamId: "portugal", awayTeamId: "spain", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
-    { order: 125, date: "2026-07-06", venue: "Seattle Stadium", homeTeamId: "usa", awayTeamId: "belgium", actualHomeScore: 1, actualAwayScore: 4, winnerTeamId: "belgium", status: "completed", predictionsLocked: true },
-    { order: 122, date: "2026-07-05", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "norway", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "norway", status: "completed", predictionsLocked: true },
-    { order: 123, date: "2026-07-05", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "england", actualHomeScore: 2, actualAwayScore: 3, winnerTeamId: "england", status: "completed", predictionsLocked: true },
+    { date: "2026-07-06", venue: "Dallas Stadium", homeTeamId: "portugal", awayTeamId: "spain", actualHomeScore: 0, actualAwayScore: 1, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
+    { date: "2026-07-06", venue: "Seattle Stadium", homeTeamId: "usa", awayTeamId: "belgium", actualHomeScore: 1, actualAwayScore: 4, winnerTeamId: "belgium", status: "completed", predictionsLocked: true },
+    { date: "2026-07-05", venue: "New York New Jersey Stadium", homeTeamId: "brazil", awayTeamId: "norway", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "norway", status: "completed", predictionsLocked: true },
+    { date: "2026-07-05", venue: "Mexico City Stadium", homeTeamId: "mexico", awayTeamId: "england", actualHomeScore: 2, actualAwayScore: 3, winnerTeamId: "england", status: "completed", predictionsLocked: true },
     { date: "2026-07-07", venue: "Atlanta Stadium", homeTeamId: "argentina", awayTeamId: "egypt", actualHomeScore: 3, actualAwayScore: 2, winnerTeamId: "argentina", status: "completed", predictionsLocked: true },
     { date: "2026-07-07", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "colombia", actualHomeScore: 0, actualAwayScore: 0, actualHomePenalties: 4, actualAwayPenalties: 3, winnerTeamId: "switzerland", status: "completed", predictionsLocked: true }
   ],
@@ -172,25 +172,16 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
 };
 
 const knockoutRoundOrder: Array<Exclude<Round, "group" | "round32">> = ["round16", "quarter", "semi", "final"];
-const knockoutRoundOrderOffsets: Record<Exclude<Round, "group" | "round32">, number> = {
-  round16: 120,
-  quarter: 140,
-  semi: 160,
-  final: 180
-};
-
 export const matches: Match[] = [
   ...groupMatchRows.map((match, index) => ({
     ...match,
     id: `g-${String(index + 1).padStart(2, "0")}`,
-    order: index + 1,
     round: "group" as const,
     status: match.status ?? "scheduled"
   })),
   ...round32MatchRows.map((match, index) => ({
     ...match,
     id: `round32-${String(index + 1).padStart(2, "0")}`,
-    order: 100 + index,
     round: "round32" as const,
     status: match.status ?? "scheduled"
   })),
@@ -199,7 +190,6 @@ export const matches: Match[] = [
       const concreteMatch = knockoutMatchRows[round]?.[index] ?? {};
       return {
         id: `${round}-${String(index + 1).padStart(2, "0")}`,
-        order: knockoutRoundOrderOffsets[round] + index,
         round,
         homeSlot: concreteMatch.homeTeamId ? undefined : label,
         awaySlot: concreteMatch.awayTeamId ? undefined : "Rival por definir",
