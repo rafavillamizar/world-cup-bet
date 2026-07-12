@@ -164,10 +164,14 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
     { date: "2026-07-07", venue: "BC Place Vancouver", homeTeamId: "switzerland", awayTeamId: "colombia", actualHomeScore: 0, actualAwayScore: 0, actualHomePenalties: 4, actualAwayPenalties: 3, winnerTeamId: "switzerland", status: "completed", predictionsLocked: true }
   ],
   quarter: [
-    { date: "2026-07-09", venue: "Boston Stadium", homeTeamId: "france", awayTeamId: "morocco" },
-    { date: "2026-07-10", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "belgium" },
-    { date: "2026-07-11", venue: "Miami Stadium", homeTeamId: "norway", awayTeamId: "england" },
-    { date: "2026-07-11", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "switzerland" }
+    { date: "2026-07-09", venue: "Boston Stadium", homeTeamId: "france", awayTeamId: "morocco", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "france", status: "completed", predictionsLocked: true },
+    { date: "2026-07-10", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "belgium", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
+    { date: "2026-07-11", venue: "Miami Stadium", homeTeamId: "norway", awayTeamId: "england", status: "scheduled", predictionsLocked: false },
+    { date: "2026-07-11", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "switzerland", status: "scheduled", predictionsLocked: false }
+  ],
+  semi: [
+    { date: "2026-07-14", venue: "Dallas Stadium", homeTeamId: "france", awayTeamId: "spain", status: "scheduled", predictionsLocked: false },
+    { date: "2026-07-15", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "argentina", status: "scheduled", predictionsLocked: false }
   ]
 };
 
@@ -202,8 +206,8 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
-  writeScope: "quarter",
-  activeRound: "quarter",
+  writeScope: "semi",
+  activeRound: "semi",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}
 } as const;

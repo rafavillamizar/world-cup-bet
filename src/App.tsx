@@ -907,7 +907,7 @@ function AdminSummaryPage({
   matches: Match[];
 }) {
   const [dateFilter, setDateFilter] = useState("");
-  const [roundFilter, setRoundFilter] = useState<Round>("quarter");
+  const [roundFilter, setRoundFilter] = useState<Round>("semi");
 
   const availableDates = useMemo(
     () =>
