@@ -6,7 +6,7 @@ export type Round =
   | "semi"
   | "final";
 
-export type WriteScope = "initial" | "round32" | "round16" | "quarter" | "closed";
+export type WriteScope = "initial" | "round32" | "round16" | "quarter" | "semi" | "final" | "closed";
 
 export type Team = {
   id: string;

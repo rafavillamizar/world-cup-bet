@@ -57,6 +57,8 @@ const writeScopeLabels: Record<WriteScope, string> = {
   round32: "Pronosticos dieciseisavos",
   round16: "Pronosticos octavos",
   quarter: "Pronosticos cuartos",
+  semi: "Pronosticos semifinales",
+  final: "Pronostico final",
   closed: "Cerrado"
 };
 
@@ -808,6 +810,8 @@ function AdminPanel({
           <option value="round32">Pronosticos dieciseisavos</option>
           <option value="round16">Pronosticos octavos</option>
           <option value="quarter">Pronosticos cuartos</option>
+          <option value="semi">Pronosticos semifinales</option>
+          <option value="final">Pronostico final</option>
           <option value="closed">Cerrado</option>
         </select>
       </label>

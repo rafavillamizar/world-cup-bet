@@ -40,7 +40,7 @@ service cloud.firestore {
         && request.auth.uid == userId
         && !request.resource.data.keys().hasAny(["status", "submittedAt"])
         && writeOpen()
-        && writeScope() in ["initial", "round32", "round16", "quarter"]
+        && writeScope() in ["initial", "round32", "round16", "quarter", "semi", "final"]
         && !(
           resource.data.keys().hasAny(["submittedScopes"])
           && resource.data.submittedScopes.keys().hasAny([writeScope()])

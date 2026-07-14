@@ -166,11 +166,11 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
   quarter: [
     { date: "2026-07-09", venue: "Boston Stadium", homeTeamId: "france", awayTeamId: "morocco", actualHomeScore: 2, actualAwayScore: 0, winnerTeamId: "france", status: "completed", predictionsLocked: true },
     { date: "2026-07-10", venue: "Los Angeles Stadium", homeTeamId: "spain", awayTeamId: "belgium", actualHomeScore: 2, actualAwayScore: 1, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
-    { date: "2026-07-11", venue: "Miami Stadium", homeTeamId: "norway", awayTeamId: "england", status: "scheduled", predictionsLocked: false },
-    { date: "2026-07-11", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "switzerland", status: "scheduled", predictionsLocked: false }
+    { date: "2026-07-11", venue: "Miami Stadium", homeTeamId: "norway", awayTeamId: "england", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "england", status: "completed", predictionsLocked: true },
+    { date: "2026-07-11", venue: "Kansas City Stadium", homeTeamId: "argentina", awayTeamId: "switzerland", actualHomeScore: 3, actualAwayScore: 1, winnerTeamId: "argentina", status: "completed", predictionsLocked: true }
   ],
   semi: [
-    { date: "2026-07-14", venue: "Dallas Stadium", homeTeamId: "france", awayTeamId: "spain", status: "scheduled", predictionsLocked: false },
+    { date: "2026-07-14", venue: "Dallas Stadium", homeTeamId: "france", awayTeamId: "spain", actualHomeScore: 0, actualAwayScore: 2, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
     { date: "2026-07-15", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "argentina", status: "scheduled", predictionsLocked: false }
   ]
 };
