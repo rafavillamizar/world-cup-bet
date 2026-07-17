@@ -1430,6 +1430,7 @@ export default function App() {
             <span>Octavos: ganador 5, exacto 7</span>
             <span>Cuartos: ganador 7, exacto 9</span>
             <span>Semis: ganador 10, exacto 12</span>
+            <span>Tercer puesto: ganador 12, exacto 15</span>
             <span>Final: ganador 12, exacto 15</span>
             <span>Campeon, MVP y goleador: 15 cada uno</span>
           </div>
