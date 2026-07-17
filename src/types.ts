@@ -4,6 +4,7 @@ export type Round =
   | "round16"
   | "quarter"
   | "semi"
+  | "thirdPlace"
   | "final";
 
 export type WriteScope = "initial" | "round32" | "round16" | "quarter" | "semi" | "final" | "closed";

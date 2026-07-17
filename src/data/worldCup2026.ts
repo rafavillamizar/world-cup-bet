@@ -149,6 +149,7 @@ const knockoutLabels: Record<Exclude<Round, "group" | "round32">, string[]> = {
   round16: Array.from({ length: 8 }, (_, index) => `Octavos ${index + 1}`),
   quarter: Array.from({ length: 4 }, (_, index) => `Cuartos ${index + 1}`),
   semi: Array.from({ length: 2 }, (_, index) => `Semifinal ${index + 1}`),
+  thirdPlace: ["Tercer puesto"],
   final: ["Final"]
 };
 
@@ -171,11 +172,23 @@ const knockoutMatchRows: Partial<Record<Exclude<Round, "group" | "round32">, Arr
   ],
   semi: [
     { date: "2026-07-14", venue: "Dallas Stadium", homeTeamId: "france", awayTeamId: "spain", actualHomeScore: 0, actualAwayScore: 2, winnerTeamId: "spain", status: "completed", predictionsLocked: true },
-    { date: "2026-07-15", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "argentina", status: "scheduled", predictionsLocked: false }
+    { date: "2026-07-15", venue: "Atlanta Stadium", homeTeamId: "england", awayTeamId: "argentina", actualHomeScore: 1, actualAwayScore: 2, winnerTeamId: "argentina", status: "completed", predictionsLocked: true }
+  ],
+  thirdPlace: [
+    { date: "2026-07-18", venue: "Miami Stadium", homeTeamId: "france", awayTeamId: "england", status: "scheduled", predictionsLocked: false }
+  ],
+  final: [
+    { date: "2026-07-19", venue: "New York New Jersey Stadium", homeTeamId: "spain", awayTeamId: "argentina", status: "scheduled", predictionsLocked: false }
   ]
 };
 
-const knockoutRoundOrder: Array<Exclude<Round, "group" | "round32">> = ["round16", "quarter", "semi", "final"];
+const knockoutRoundOrder: Array<Exclude<Round, "group" | "round32">> = [
+  "round16",
+  "quarter",
+  "semi",
+  "thirdPlace",
+  "final"
+];
 export const matches: Match[] = [
   ...groupMatchRows.map((match, index) => ({
     ...match,
@@ -206,8 +219,8 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
-  writeScope: "semi",
-  activeRound: "semi",
+  writeScope: "final",
+  activeRound: "final",
   lockedMessage: "No se pueden actualizar datos en este momento",
   actualAwards: {}
 } as const;
@@ -218,5 +231,6 @@ export const roundLabels: Record<Round, string> = {
   round16: "Octavos",
   quarter: "Cuartos",
   semi: "Semifinales",
+  thirdPlace: "Tercer puesto",
   final: "Final"
 };

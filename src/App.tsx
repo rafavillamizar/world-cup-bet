@@ -49,6 +49,7 @@ const selectableRounds: Array<{ round: Round; limit: number }> = [
   { round: "round16", limit: 16 },
   { round: "quarter", limit: 8 },
   { round: "semi", limit: 4 },
+  { round: "thirdPlace", limit: 2 },
   { round: "final", limit: 2 }
 ];
 
@@ -58,7 +59,7 @@ const writeScopeLabels: Record<WriteScope, string> = {
   round16: "Pronosticos octavos",
   quarter: "Pronosticos cuartos",
   semi: "Pronosticos semifinales",
-  final: "Pronostico final",
+  final: "Pronosticos final y tercer puesto",
   closed: "Cerrado"
 };
 
@@ -71,7 +72,8 @@ const roundSortOrder: Record<Round, number> = {
   round16: 2,
   quarter: 3,
   semi: 4,
-  final: 5
+  thirdPlace: 5,
+  final: 6
 };
 
 function nowIso() {
@@ -245,6 +247,16 @@ function getQualifiedTeamIds(matches: Match[], round: Round) {
       matches
         .filter((match) => match.round === "round32")
         .flatMap((match) => [match.homeTeamId, match.awayTeamId])
+    );
+  }
+
+  if (round === "thirdPlace") {
+    return uniqueTeamIds(
+      matches
+        .filter((match) => match.round === "semi" && hasOfficialScore(match))
+        .map((match) =>
+          match.winnerTeamId === match.homeTeamId ? match.awayTeamId : match.homeTeamId
+        )
     );
   }
 
@@ -811,7 +823,7 @@ function AdminPanel({
           <option value="round16">Pronosticos octavos</option>
           <option value="quarter">Pronosticos cuartos</option>
           <option value="semi">Pronosticos semifinales</option>
-          <option value="final">Pronostico final</option>
+          <option value="final">Pronosticos final y tercer puesto</option>
           <option value="closed">Cerrado</option>
         </select>
       </label>
@@ -911,7 +923,7 @@ function AdminSummaryPage({
   matches: Match[];
 }) {
   const [dateFilter, setDateFilter] = useState("");
-  const [roundFilter, setRoundFilter] = useState<Round>("semi");
+  const [roundFilter, setRoundFilter] = useState<Round>("final");
 
   const availableDates = useMemo(
     () =>

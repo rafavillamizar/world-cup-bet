@@ -6,6 +6,7 @@ const roundPoints = {
   round16: { winner: 5, exact: 7 },
   quarter: { winner: 7, exact: 9 },
   semi: { winner: 10, exact: 12 },
+  thirdPlace: { winner: 12, exact: 15 },
   final: { winner: 12, exact: 15 }
 } as const;
 
