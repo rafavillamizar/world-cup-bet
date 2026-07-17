@@ -588,6 +588,32 @@ label {
   font-size: 0.88rem;
 }
 
+.summary-award-pick {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.summary-award-pick span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-award-pick em {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.summary-award-pick em.hit {
+  color: var(--soft-strong);
+  font-weight: 700;
+}
+
 .summary-awards-table tbody tr:last-child th,
 .summary-awards-table tbody tr:last-child td {
   border-bottom: 0;

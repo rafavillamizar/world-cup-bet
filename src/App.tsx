@@ -33,7 +33,7 @@ import {
 import { defaultAppConfig, matches as seedMatches, roundLabels, teams } from "./data/worldCup2026";
 import { demoBet, demoParticipantProfile, demoProfile, demoState } from "./lib/demoStore";
 import { firebase } from "./lib/firebase";
-import { compareScoreboards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
+import { compareScoreboards, scoreAwards, scoreBet, scoreMatch, scoreMatches } from "./lib/scoring";
 import type {
   AppConfig,
   Match,
@@ -929,10 +929,12 @@ function formatPredictionWinner(match: Match, prediction?: MatchPrediction) {
 
 function AdminSummaryPage({
   bets,
-  matches
+  matches,
+  config
 }: {
   bets: UserBet[];
   matches: Match[];
+  config: AppConfig;
 }) {
   const [dateFilter, setDateFilter] = useState("");
   const [roundFilter, setRoundFilter] = useState<Round>("final");
@@ -970,8 +972,14 @@ function AdminSummaryPage({
     [bets, visibleMatches]
   );
   const awardRows = useMemo(
-    () => [...bets].sort((a, b) => a.displayName.localeCompare(b.displayName, "es")),
-    [bets]
+    () =>
+      bets
+        .map((bet) => ({
+          bet,
+          score: scoreAwards(bet.awards, config.actualAwards)
+        }))
+        .sort((a, b) => a.bet.displayName.localeCompare(b.bet.displayName, "es")),
+    [bets, config.actualAwards]
   );
 
   return (
@@ -1081,12 +1089,33 @@ function AdminSummaryPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {awardRows.map((bet) => (
+                  {awardRows.map(({ bet, score }) => (
                     <tr key={`awards-${bet.uid}`}>
                       <th scope="row">{bet.displayName}</th>
-                      <td>{teamLabel(bet.awards.championTeamId, "Sin elegir")}</td>
-                      <td>{bet.awards.mvpName?.trim() || "Sin elegir"}</td>
-                      <td>{bet.awards.topScorerName?.trim() || "Sin elegir"}</td>
+                      <td>
+                        <div className="summary-award-pick">
+                          <span>{teamLabel(bet.awards.championTeamId, "Sin elegir")}</span>
+                          <em className={score.champion.hit ? "hit" : ""}>
+                            {score.champion.resolved ? `${score.champion.points} pts` : "-"}
+                          </em>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="summary-award-pick">
+                          <span>{bet.awards.mvpName?.trim() || "Sin elegir"}</span>
+                          <em className={score.mvp.hit ? "hit" : ""}>
+                            {score.mvp.resolved ? `${score.mvp.points} pts` : "-"}
+                          </em>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="summary-award-pick">
+                          <span>{bet.awards.topScorerName?.trim() || "Sin elegir"}</span>
+                          <em className={score.topScorer.hit ? "hit" : ""}>
+                            {score.topScorer.resolved ? `${score.topScorer.points} pts` : "-"}
+                          </em>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1422,7 +1451,7 @@ export default function App() {
       )}
 
       {isAdmin && adminView === "summary" ? (
-        <AdminSummaryPage bets={participantBets} matches={matches} />
+        <AdminSummaryPage bets={participantBets} matches={matches} config={config} />
       ) : (
         <section className="dashboard-grid">
         <section className="bento-card match-panel">

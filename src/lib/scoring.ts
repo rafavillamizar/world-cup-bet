@@ -1,4 +1,4 @@
-import type { Match, MatchPrediction, ScoreBreakdown, UserBet } from "../types";
+import type { AwardsPrediction, Match, MatchPrediction, ScoreBreakdown, UserBet } from "../types";
 
 const roundPoints = {
   group: { winner: 1, exact: 3 },
@@ -86,35 +86,49 @@ function normalizeName(value?: string) {
   return value?.trim().toLocaleLowerCase("es-ES");
 }
 
+const awardPoints = 15;
+
+export function scoreAwards(prediction: AwardsPrediction, actual: AwardsPrediction) {
+  const championResolved = Boolean(actual.championTeamId);
+  const mvpResolved = Boolean(normalizeName(actual.mvpName));
+  const topScorerResolved = Boolean(normalizeName(actual.topScorerName));
+  const championHit = Boolean(
+    championResolved && prediction.championTeamId === actual.championTeamId
+  );
+  const mvpHit = Boolean(
+    mvpResolved && normalizeName(prediction.mvpName) === normalizeName(actual.mvpName)
+  );
+  const topScorerHit = Boolean(
+    topScorerResolved &&
+      normalizeName(prediction.topScorerName) === normalizeName(actual.topScorerName)
+  );
+
+  return {
+    champion: { resolved: championResolved, hit: championHit, points: championHit ? awardPoints : 0 },
+    mvp: { resolved: mvpResolved, hit: mvpHit, points: mvpHit ? awardPoints : 0 },
+    topScorer: { resolved: topScorerResolved, hit: topScorerHit, points: topScorerHit ? awardPoints : 0 },
+    total:
+      (championHit ? awardPoints : 0) +
+      (mvpHit ? awardPoints : 0) +
+      (topScorerHit ? awardPoints : 0)
+  };
+}
+
 export function scoreBet(
   bet: UserBet,
   matches: Match[],
-  actualAwards: { championTeamId?: string; mvpName?: string; topScorerName?: string }
+  actualAwards: AwardsPrediction
 ): ScoreBreakdown {
   const matchScore = scoreMatches(bet, matches);
-  let total = matchScore.total;
-
-  const championHit = Boolean(
-    actualAwards.championTeamId && bet.awards.championTeamId === actualAwards.championTeamId
-  );
-  const mvpHit = Boolean(
-    normalizeName(actualAwards.mvpName) && normalizeName(bet.awards.mvpName) === normalizeName(actualAwards.mvpName)
-  );
-  const topScorerHit = Boolean(
-    normalizeName(actualAwards.topScorerName) &&
-      normalizeName(bet.awards.topScorerName) === normalizeName(actualAwards.topScorerName)
-  );
-  total += championHit ? 15 : 0;
-  total += mvpHit ? 15 : 0;
-  total += topScorerHit ? 15 : 0;
+  const awardScore = scoreAwards(bet.awards, actualAwards);
 
   return {
-    total,
+    total: matchScore.total + awardScore.total,
     exactHits: matchScore.exactHits,
     winnerHits: matchScore.winnerHits,
-    championHit,
-    mvpHit,
-    topScorerHit
+    championHit: awardScore.champion.hit,
+    mvpHit: awardScore.mvp.hit,
+    topScorerHit: awardScore.topScorer.hit
   };
 }
 
