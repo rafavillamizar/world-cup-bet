@@ -21,10 +21,17 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/app/config).data.writeScope;
     }
 
+    function awardsWriteOpen() {
+      return exists(/databases/$(database)/documents/app/config)
+        && get(/databases/$(database)/documents/app/config).data.keys().hasAll(["awardsWriteEnabled"])
+        && get(/databases/$(database)/documents/app/config).data.awardsWriteEnabled == true;
+    }
+
     function ownBetCreateAllowed(userId) {
       return signedIn()
         && request.auth.uid == userId
         && !request.resource.data.keys().hasAny(["status", "submittedAt"])
+        && (awardsWriteOpen() || request.resource.data.awards.size() == 0)
         && (
           writeOpen()
           || (
@@ -41,6 +48,7 @@ service cloud.firestore {
         && !request.resource.data.keys().hasAny(["status", "submittedAt"])
         && writeOpen()
         && writeScope() in ["initial", "round32", "round16", "quarter", "semi", "final"]
+        && (awardsWriteOpen() || request.resource.data.awards == resource.data.awards)
         && !(
           resource.data.keys().hasAny(["submittedScopes"])
           && resource.data.submittedScopes.keys().hasAny([writeScope()])

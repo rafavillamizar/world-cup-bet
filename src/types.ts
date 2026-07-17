@@ -68,6 +68,7 @@ export type UserProfile = {
 
 export type AppConfig = {
   writeEnabled: boolean;
+  awardsWriteEnabled: boolean;
   writeScope: WriteScope;
   activeRound: Round;
   lockedMessage: string;

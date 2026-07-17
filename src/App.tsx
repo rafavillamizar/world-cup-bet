@@ -679,6 +679,11 @@ function AwardsPanel({
   onConfig: (patch: Partial<AppConfig>) => void;
   onBlocked: (message?: string) => void;
 }) {
+  const canEditAwards = canWrite && config.awardsWriteEnabled;
+  const awardsBlockedMessage = config.awardsWriteEnabled
+    ? undefined
+    : "La edicion de campeon, MVP y maximo goleador esta cerrada.";
+
   return (
     <section className="bento-card awards-panel">
       <div className="section-title">
@@ -688,9 +693,9 @@ function AwardsPanel({
       <label>
         Campeon
         <select
-          disabled={!canWrite}
+          disabled={!canEditAwards}
           value={bet.awards.championTeamId ?? ""}
-          onClick={() => !canWrite && onBlocked()}
+          onClick={() => !canEditAwards && onBlocked(awardsBlockedMessage)}
           onChange={(event) => onBet({ awards: { ...bet.awards, championTeamId: event.target.value } })}
         >
           <option value="">Selecciona equipo</option>
@@ -704,18 +709,18 @@ function AwardsPanel({
       <label>
         MVP del torneo
         <input
-          disabled={!canWrite}
+          disabled={!canEditAwards}
           value={bet.awards.mvpName ?? ""}
-          onClick={() => !canWrite && onBlocked()}
+          onClick={() => !canEditAwards && onBlocked(awardsBlockedMessage)}
           onChange={(event) => onBet({ awards: { ...bet.awards, mvpName: event.target.value } })}
         />
       </label>
       <label>
         Maximo goleador
         <input
-          disabled={!canWrite}
+          disabled={!canEditAwards}
           value={bet.awards.topScorerName ?? ""}
-          onClick={() => !canWrite && onBlocked()}
+          onClick={() => !canEditAwards && onBlocked(awardsBlockedMessage)}
           onChange={(event) => onBet({ awards: { ...bet.awards, topScorerName: event.target.value } })}
         />
       </label>
@@ -814,6 +819,13 @@ function AdminPanel({
       >
         {config.writeEnabled ? <Unlock size={17} /> : <Lock size={17} />}
         {config.writeEnabled ? "Escritura abierta" : "Escritura cerrada"}
+      </button>
+      <button
+        className={config.awardsWriteEnabled ? "toggle on" : "toggle"}
+        onClick={() => onConfig({ awardsWriteEnabled: !config.awardsWriteEnabled })}
+      >
+        {config.awardsWriteEnabled ? <Unlock size={17} /> : <Lock size={17} />}
+        {config.awardsWriteEnabled ? "Bonus editables" : "Bonus bloqueados"}
       </button>
       <label>
         Ventana

@@ -219,6 +219,7 @@ export const matches: Match[] = [
 
 export const defaultAppConfig = {
   writeEnabled: true,
+  awardsWriteEnabled: false,
   writeScope: "final",
   activeRound: "final",
   lockedMessage: "No se pueden actualizar datos en este momento",
