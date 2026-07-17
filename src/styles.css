@@ -539,6 +539,60 @@ label {
   gap: 12px;
 }
 
+.summary-awards-comparison {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.summary-awards-comparison h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.summary-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.summary-awards-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.summary-awards-table th,
+.summary-awards-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 11px 12px;
+  vertical-align: middle;
+}
+
+.summary-awards-table thead th {
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.summary-awards-table tbody th {
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.summary-awards-table td {
+  color: var(--soft);
+  font-size: 0.88rem;
+}
+
+.summary-awards-table tbody tr:last-child th,
+.summary-awards-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .summary-match {
   display: grid;
   gap: 12px;

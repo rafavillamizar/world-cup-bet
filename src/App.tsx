@@ -957,6 +957,10 @@ function AdminSummaryPage({
         .sort((a, b) => compareScoreboards(a, b) || a.bet.displayName.localeCompare(b.bet.displayName, "es")),
     [bets, visibleMatches]
   );
+  const awardRows = useMemo(
+    () => [...bets].sort((a, b) => a.displayName.localeCompare(b.displayName, "es")),
+    [bets]
+  );
 
   return (
     <section className="admin-summary-grid">
@@ -1047,6 +1051,39 @@ function AdminSummaryPage({
             );
           })}
         </div>
+
+        <section className="summary-awards-comparison">
+          <div className="section-title">
+            <Award size={18} />
+            <h3>Pronosticos del torneo</h3>
+          </div>
+          {awardRows.length ? (
+            <div className="summary-table-scroll">
+              <table className="summary-awards-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Participante</th>
+                    <th scope="col">Equipo campeon</th>
+                    <th scope="col">MVP del torneo</th>
+                    <th scope="col">Maximo goleador</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {awardRows.map((bet) => (
+                    <tr key={`awards-${bet.uid}`}>
+                      <th scope="row">{bet.displayName}</th>
+                      <td>{teamLabel(bet.awards.championTeamId, "Sin elegir")}</td>
+                      <td>{bet.awards.mvpName?.trim() || "Sin elegir"}</td>
+                      <td>{bet.awards.topScorerName?.trim() || "Sin elegir"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="empty-copy">No hay pronosticos de participantes.</p>
+          )}
+        </section>
       </section>
 
       <section className="bento-card summary-leaderboard">
